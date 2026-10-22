@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studyflow}
       POSTGRES_DB: ${POSTGRES_DB:-studyflow}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # 127.0.0.1 only: reachable from this PC, not from other devices on the network.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       # Named volume: data survives `docker compose down` (use `down -v` to wipe it).
       - pgdata:/var/lib/postgresql/data
