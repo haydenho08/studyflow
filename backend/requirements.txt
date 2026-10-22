@@ -1,0 +1,11 @@
+# Runtime dependencies, pinned so every machine (and CI) installs the same versions.
+fastapi==0.159.1
+uvicorn[standard]==0.54.0
+SQLAlchemy==2.0.55
+alembic==1.20.1
+psycopg[binary]==3.3.6
+pydantic[email]==2.14.1
+pydantic-settings==2.16.1
+PyJWT==2.15.1
+bcrypt==5.0.0
+python-multipart==0.0.32
