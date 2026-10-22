@@ -20,9 +20,9 @@ class Settings(BaseSettings):
         extra="ignore",  # .env also holds POSTGRES_* vars meant for docker-compose
     )
 
-    database_url: str = "postgresql+psycopg://studyflow:studyflow@localhost:5432/studyflow"
+    database_url: str = "postgresql+psycopg://studyflow:studyflow@127.0.0.1:5432/studyflow"
     test_database_url: str = (
-        "postgresql+psycopg://studyflow:studyflow@localhost:5432/studyflow_test"
+        "postgresql+psycopg://studyflow:studyflow@127.0.0.1:5432/studyflow_test"
     )
 
     # No default: the app refuses to start without a secret instead of using a guessable one.

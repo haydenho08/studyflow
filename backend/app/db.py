@@ -33,7 +33,12 @@ class TimestampMixin:
 
 def make_engine(url: str) -> Engine:
     # Every connection uses UTC, so timestamps come back from Postgres as UTC-aware datetimes.
-    return create_engine(url, pool_pre_ping=True, connect_args={"options": "-c timezone=utc"})
+    # connect_timeout: fail fast with an error instead of hanging if the database is unreachable.
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        connect_args={"options": "-c timezone=utc", "connect_timeout": 5},
+    )
 
 
 engine = make_engine(get_settings().database_url)
