@@ -7,6 +7,7 @@ from app.db import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.assignment import Assignment
+    from app.models.study_session import StudySession
     from app.models.user import User
 
 
@@ -25,5 +26,8 @@ class Course(TimestampMixin, Base):
 
     user: Mapped["User"] = relationship(back_populates="courses")
     assignments: Mapped[list["Assignment"]] = relationship(
+        back_populates="course", cascade="all, delete-orphan", passive_deletes=True
+    )
+    study_sessions: Mapped[list["StudySession"]] = relationship(
         back_populates="course", cascade="all, delete-orphan", passive_deletes=True
     )
