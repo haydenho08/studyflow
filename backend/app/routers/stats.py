@@ -1,4 +1,4 @@
-﻿import datetime as dt
+import datetime as dt
 from collections import defaultdict
 from typing import Annotated
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
