@@ -2,7 +2,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import assignments, auth, courses
+from app.routers import assignments, auth, courses, stats, study_sessions
 
 
 def create_app() -> FastAPI:
@@ -28,6 +28,8 @@ def create_app() -> FastAPI:
     api.include_router(auth.router)
     api.include_router(courses.router)
     api.include_router(assignments.router)
+    api.include_router(study_sessions.router)
+    api.include_router(stats.router)
     app.include_router(api)
     return app
 
