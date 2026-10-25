@@ -10,6 +10,7 @@ import {
 } from "../api/queries";
 import type { Assignment, AssignmentKind, Course, Priority, Status } from "../api/types";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Swatch } from "../components/Swatch";
 import {
   defaultDueInput,
   formatDue,
@@ -203,7 +204,7 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
 
   return (
     <li className={`card assignment-item${done ? " is-done" : ""}${overdue ? " is-overdue" : ""}`}>
-      <span className="swatch" style={{ background: course?.color }} aria-hidden="true" />
+      <Swatch color={course?.color} />
       <div className="grow">
         <div className="assignment-title">{assignment.title}</div>
         <div className="muted meta">

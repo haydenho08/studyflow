@@ -3,11 +3,13 @@ import { useState, type FormEvent } from "react";
 import { useCourses, useCreateCourse, useDeleteCourse, useUpdateCourse } from "../api/queries";
 import type { Course } from "../api/types";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Swatch } from "../components/Swatch";
+import { COURSE_PALETTE_LIGHT, nextCourseColor } from "../lib/colors";
 import { changedFields, isEmpty } from "../lib/diff";
 
 type CourseFormValues = { name: string; code: string; color: string };
 
-const EMPTY_COURSE: CourseFormValues = { name: "", code: "", color: "#3B82F6" };
+const EMPTY_COURSE: CourseFormValues = { name: "", code: "", color: COURSE_PALETTE_LIGHT[0] };
 
 function CourseForm({
   initial = EMPTY_COURSE,
@@ -106,7 +108,7 @@ function CourseItem({ course }: { course: Course }) {
 
   return (
     <li className="card course-item">
-      <span className="swatch" style={{ background: course.color }} aria-hidden="true" />
+      <Swatch color={course.color} />
       <div className="grow">
         <div className="course-code">{course.code}</div>
         <div className="muted">{course.name}</div>
@@ -137,7 +139,13 @@ export function CoursesPage() {
 
       <div className="card">
         <h2>Add a course</h2>
-        <CourseForm submitLabel="Add course" onSubmit={(values) => createCourse.mutateAsync(values)} />
+        <CourseForm
+          // Remount after each add so the form picks up the next unused palette colour.
+          key={courses.data?.length ?? 0}
+          initial={{ ...EMPTY_COURSE, color: nextCourseColor(courses.data?.map((c) => c.color) ?? []) }}
+          submitLabel="Add course"
+          onSubmit={(values) => createCourse.mutateAsync(values)}
+        />
       </div>
 
       {courses.isPending ? (
