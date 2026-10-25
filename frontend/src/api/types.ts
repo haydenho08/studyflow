@@ -1,6 +1,6 @@
 // Friendly names for the types generated from the backend's OpenAPI schema (src/api/schema.ts).
 // Never edit schema.ts by hand: change the Pydantic schemas, then run `npm run gen:api`.
-import type { components } from "./schema";
+import type { components, operations } from "./schema";
 
 type Schemas = components["schemas"];
 
@@ -23,20 +23,12 @@ export type StudySessionCreate = Schemas["StudySessionCreate"];
 export type WeekStats = Schemas["WeekStats"];
 export type DayStats = Schemas["DayStats"];
 
-/** Query parameters accepted by GET /api/study-sessions. */
-export type StudySessionFilters = {
-  course_id?: number;
-  started_from?: string;
-  started_to?: string;
-  limit?: number;
-};
+// Query-string types are generated too (from each endpoint's parameters), so a new or renamed
+// filter on the backend shows up here without hand-editing.
+type QueryOf<Operation extends keyof operations> = NonNullable<operations[Operation]["parameters"]["query"]>;
 
 /** Query parameters accepted by GET /api/assignments. */
-export type AssignmentFilters = {
-  course_id?: number;
-  status?: Status;
-  priority?: Priority;
-  kind?: AssignmentKind;
-  due_from?: string;
-  due_to?: string;
-};
+export type AssignmentFilters = QueryOf<"list_assignments_api_assignments_get">;
+
+/** Query parameters accepted by GET /api/study-sessions. */
+export type StudySessionFilters = QueryOf<"list_sessions_api_study_sessions_get">;

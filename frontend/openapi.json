@@ -389,7 +389,10 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/Status"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Status"
+                  }
                 },
                 {
                   "type": "null"

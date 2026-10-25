@@ -33,7 +33,8 @@ export function describeError(error: unknown): string {
   return "Couldn't reach the server. Is the API running?";
 }
 
-type QueryValue = string | number | undefined;
+// An array becomes a repeated parameter: { status: ["todo", "done"] } -> ?status=todo&status=done
+type QueryValue = string | number | null | undefined | readonly (string | number)[];
 
 interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -57,7 +58,9 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   const url = new URL(BASE_URL + path, window.location.origin);
   for (const [key, value] of Object.entries(options.query ?? {})) {
-    if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item !== undefined && item !== null && item !== "") url.searchParams.append(key, String(item));
+    }
   }
 
   const response = await fetch(url, { method: options.method ?? "GET", headers, body });

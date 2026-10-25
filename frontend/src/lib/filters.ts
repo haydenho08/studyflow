@@ -44,7 +44,7 @@ export function readFilterParams(params: URLSearchParams): FilterParams {
 export function toApiFilters(filters: FilterParams): AssignmentFilters {
   return {
     course_id: filters.course,
-    status: filters.status,
+    status: filters.status ? [filters.status] : undefined, // the API takes a list (OR)
     priority: filters.priority,
     kind: filters.kind,
     due_from: filters.from ? localDayStart(filters.from) : undefined,

@@ -757,7 +757,7 @@ export interface operations {
         parameters: {
             query?: {
                 course_id?: number | null;
-                status?: components["schemas"]["Status"] | null;
+                status?: components["schemas"]["Status"][] | null;
                 priority?: components["schemas"]["Priority"] | null;
                 kind?: components["schemas"]["AssignmentKind"] | null;
                 /** @description Inclusive lower bound on due_at */

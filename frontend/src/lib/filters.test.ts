@@ -39,7 +39,7 @@ describe("toApiFilters", () => {
   it("maps names and leaves unset filters out", () => {
     expect(toApiFilters({ course: 3, status: "todo" })).toEqual({
       course_id: 3,
-      status: "todo",
+      status: ["todo"],
       priority: undefined,
       kind: undefined,
       due_from: undefined,
