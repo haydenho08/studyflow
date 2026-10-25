@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   PRESETS,
@@ -9,6 +9,9 @@ import {
   sessionFor,
   startBreak,
   startFocus,
+  IDLE,
+  loadTimer,
+  saveTimer,
 } from "./pomodoro";
 
 const classic = PRESETS[0]!;
@@ -16,7 +19,7 @@ const T0 = Date.UTC(2026, 9, 12, 14, 0, 0); // 2026-10-12T14:00:00Z
 const MIN = 60_000;
 
 describe("focus timer", () => {
-  const focus = startFocus(7, classic, T0);
+  const focus = startFocus(1, 7, classic, T0);
 
   it("counts down from the preset length", () => {
     expect(remainingMs(focus, T0)).toBe(25 * MIN);
@@ -41,7 +44,7 @@ describe("focus timer", () => {
 
 describe("break", () => {
   it("starts when the focus block was due to end, not when it was noticed", () => {
-    const brk = startBreak(startFocus(7, classic, T0));
+    const brk = startBreak(startFocus(1, 7, classic, T0));
     expect(brk.phase).toBe("break");
     expect(brk.startedAt).toBe(T0 + 25 * MIN);
     expect(brk.durationMs).toBe(5 * MIN);
@@ -49,8 +52,44 @@ describe("break", () => {
   });
 
   it("uses the preset's break length", () => {
-    const brk = startBreak(startFocus(7, PRESETS[1]!, T0));
+    const brk = startBreak(startFocus(1, 7, PRESETS[1]!, T0));
     expect(brk.durationMs).toBe(10 * MIN);
+  });
+});
+
+describe("loadTimer", () => {
+  const stored = startFocus(1, 7, classic, T0);
+
+  // Tests run in Node: give them an in-memory localStorage instead of a browser one.
+  beforeEach(() => {
+    const data = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+      removeItem: (k: string) => void data.delete(k),
+    });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("returns the stored timer only to the user who started it", () => {
+    localStorage.setItem("studyflow.timer", JSON.stringify(stored));
+    expect(loadTimer(1)).toEqual(stored);
+    expect(loadTimer(2)).toEqual(IDLE); // someone else on this computer
+    expect(loadTimer(undefined)).toEqual(IDLE);
+  });
+
+  it("ignores malformed or old-format data", () => {
+    localStorage.setItem("studyflow.timer", "{not json");
+    expect(loadTimer(1)).toEqual(IDLE);
+    // Saved before timers had owners:
+    localStorage.setItem("studyflow.timer", JSON.stringify({ ...stored, userId: undefined }));
+    expect(loadTimer(1)).toEqual(IDLE);
+  });
+
+  it("saveTimer(IDLE) clears it", () => {
+    saveTimer(stored);
+    saveTimer(IDLE);
+    expect(localStorage.getItem("studyflow.timer")).toBeNull();
   });
 });
 

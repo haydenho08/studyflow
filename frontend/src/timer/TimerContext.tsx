@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { useCreateSession } from "../api/queries";
+import { useAuth } from "../auth/AuthContext";
 import type { StudySessionCreate } from "../api/types";
 import { playChime, unlockAudio } from "../lib/chime";
 import {
@@ -24,6 +25,7 @@ import {
   startBreak,
   startFocus,
   type Preset,
+  type RunningTimer,
   type TimerState,
 } from "../lib/pomodoro";
 
@@ -50,7 +52,10 @@ const TimerContext = createContext<TimerApi | null>(null);
  * tab title) while you look at other pages.
  */
 export function TimerProvider({ children }: { children: ReactNode }) {
-  const [timer, setTimerState] = useState<TimerState>(loadTimer);
+  // Mounted only once the user is known (inside RequireAuth), so this reads *their* timer.
+  const { user } = useAuth();
+  const userId = user?.id;
+  const [timer, setTimerState] = useState<TimerState>(() => loadTimer(userId));
   const [now, setNow] = useState(() => Date.now());
   const [unsaved, setUnsaved] = useState<StudySessionCreate | null>(null);
   const { mutate: createSession, error: saveError, isPending: isSaving, reset } = useCreateSession();
@@ -68,42 +73,49 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     [createSession],
   );
 
-  // Re-render 4x a second while running. The displayed time is recomputed from timestamps on
-  // every render, so a missed or throttled tick only delays the display, it never drifts.
+  // Phase transitions: focus -> (log session) -> break -> idle. Called from the clock tick below,
+  // i.e. in response to an external event (time passing), not as an effect reacting to state.
+  const handledRef = useRef<number | null>(null);
+  const complete = useCallback(
+    (finished: RunningTimer, at: number) => {
+      // Two ticks can land before React re-renders, and StrictMode mounts effects twice in
+      // development. Remember which block we already handled so we never log it twice.
+      if (handledRef.current === finished.startedAt) return;
+      handledRef.current = finished.startedAt;
+
+      if (finished.phase === "focus") {
+        // Log the planned block exactly, even if we only noticed now (tab was asleep, etc.).
+        save(sessionFor(finished, finished.startedAt + finished.durationMs));
+        const breakTimer = startBreak(finished);
+        setTimer(isFinished(breakTimer, at) ? IDLE : breakTimer); // away past the break too? skip it
+      } else {
+        setTimer(IDLE);
+      }
+      playChime();
+    },
+    [save, setTimer],
+  );
+
+  // The clock: 4 ticks a second while running. Each tick re-renders (the display is recomputed
+  // from timestamps, so a late or throttled tick never drifts) and checks whether the block ended.
   useEffect(() => {
     if (timer.phase === "idle") return;
-    const id = window.setInterval(() => setNow(Date.now()), 250);
+    const id = window.setInterval(() => {
+      const at = Date.now();
+      setNow(at);
+      if (isFinished(timer, at)) complete(timer, at);
+    }, 250);
     return () => window.clearInterval(id);
-  }, [timer.phase]);
+  }, [timer, complete]);
 
   // Another tab started or stopped the timer: follow it.
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
-      if (event.key === "studyflow.timer") setTimerState(loadTimer());
+      if (event.key === "studyflow.timer") setTimerState(loadTimer(userId));
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // Phase transitions: focus -> (log session) -> break -> idle.
-  const handledRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (timer.phase === "idle" || !isFinished(timer, now)) return;
-    // Effects can run more than once for the same state (React StrictMode does this on purpose
-    // in development). Remember which block we already handled so we never log it twice.
-    if (handledRef.current === timer.startedAt) return;
-    handledRef.current = timer.startedAt;
-
-    if (timer.phase === "focus") {
-      // Log the planned block exactly, even if we only noticed now (tab was asleep, etc.).
-      save(sessionFor(timer, timer.startedAt + timer.durationMs));
-      const breakTimer = startBreak(timer);
-      setTimer(isFinished(breakTimer, now) ? IDLE : breakTimer); // away past the break too? skip it
-    } else {
-      setTimer(IDLE);
-    }
-    playChime();
-  }, [timer, now, save, setTimer]);
+  }, [userId]);
 
   // Show the countdown in the browser tab, so it's visible from other tabs.
   useEffect(() => {
@@ -113,6 +125,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }
     const label = timer.phase === "focus" ? "Focus" : "Break";
     document.title = `${formatClock(remainingMs(timer, now))} · ${label} · StudyFlow`;
+    // Undo on unmount (e.g. logging out), or the countdown would stay frozen in the tab title.
+    return () => {
+      document.title = "StudyFlow";
+    };
   }, [timer, now]);
 
   const start = useCallback(
@@ -120,9 +136,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       unlockAudio(); // inside a click handler, so the browser allows sound later
       const startedAt = Date.now();
       setNow(startedAt);
-      setTimer(startFocus(courseId, preset, startedAt));
+      if (userId === undefined) return;
+      setTimer(startFocus(userId, courseId, preset, startedAt));
     },
-    [setTimer],
+    [setTimer, userId],
   );
 
   const finishEarly = useCallback(() => {

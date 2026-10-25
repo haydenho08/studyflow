@@ -40,13 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   // Whenever we end up logged out (button, expired token, another tab), forget every cached
-  // response and any running timer, so the next person to log in on this browser can never see
-  // (or log time against) the last user's data.
+  // response, so the next person to log in on this browser can never see the last user's data.
+  // (A running timer is kept on expiry: it's tagged with its owner's id, so only that same
+  // user gets it back after logging in again. See lib/pomodoro.ts loadTimer.)
   useEffect(() => {
-    if (token === null) {
-      queryClient.clear();
-      saveTimer(IDLE);
-    }
+    if (token === null) queryClient.clear();
   }, [token, queryClient]);
 
   const login = useCallback(
@@ -66,7 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [login],
   );
 
-  const logout = useCallback(() => setToken(null), []);
+  // Pressing "Log out" is deliberate, so it also stops any running timer.
+  const logout = useCallback(() => {
+    saveTimer(IDLE);
+    setToken(null);
+  }, []);
 
   const value = useMemo<AuthState>(
     () => ({

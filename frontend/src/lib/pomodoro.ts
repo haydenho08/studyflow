@@ -24,6 +24,7 @@ export type TimerState =
   | { phase: "idle" }
   | {
       phase: "focus" | "break";
+      userId: number; // whose timer this is: survives token expiry, never shown to anyone else
       courseId: number;
       presetId: string;
       startedAt: number; // epoch ms
@@ -38,8 +39,15 @@ export function findPreset(id: string): Preset {
   return PRESETS.find((p) => p.id === id) ?? PRESETS[0]!;
 }
 
-export function startFocus(courseId: number, preset: Preset, now: number): RunningTimer {
-  return { phase: "focus", courseId, presetId: preset.id, startedAt: now, durationMs: preset.focusMinutes * 60_000 };
+export function startFocus(userId: number, courseId: number, preset: Preset, now: number): RunningTimer {
+  return {
+    phase: "focus",
+    userId,
+    courseId,
+    presetId: preset.id,
+    startedAt: now,
+    durationMs: preset.focusMinutes * 60_000,
+  };
 }
 
 /** The break starts when the focus block was *due* to end, not when we noticed it ended. */
@@ -91,6 +99,7 @@ function isRunningTimer(value: unknown): value is RunningTimer {
   const v = value as Record<string, unknown>;
   return (
     (v.phase === "focus" || v.phase === "break") &&
+    typeof v.userId === "number" &&
     typeof v.courseId === "number" &&
     typeof v.presetId === "string" &&
     typeof v.startedAt === "number" &&
@@ -98,10 +107,12 @@ function isRunningTimer(value: unknown): value is RunningTimer {
   );
 }
 
-export function loadTimer(): TimerState {
+/** The stored timer, if it is well-formed and belongs to `userId`. Anyone else's is ignored. */
+export function loadTimer(userId: number | undefined): TimerState {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    return isRunningTimer(parsed) ? parsed : IDLE; // never trust stored data's shape
+    // Never trust stored data's shape, or that it's yours (shared computers).
+    return isRunningTimer(parsed) && parsed.userId === userId ? parsed : IDLE;
   } catch {
     return IDLE;
   }
