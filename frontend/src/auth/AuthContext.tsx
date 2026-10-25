@@ -12,6 +12,7 @@ import {
 import { authApi } from "../api/endpoints";
 import { queryKeys } from "../api/queries";
 import type { User } from "../api/types";
+import { IDLE, saveTimer } from "../lib/pomodoro";
 import { getToken, setToken, subscribe } from "./token";
 
 interface AuthState {
@@ -39,9 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   // Whenever we end up logged out (button, expired token, another tab), forget every cached
-  // response, so the next person to log in on this browser can never see the last user's data.
+  // response and any running timer, so the next person to log in on this browser can never see
+  // (or log time against) the last user's data.
   useEffect(() => {
-    if (token === null) queryClient.clear();
+    if (token === null) {
+      queryClient.clear();
+      saveTimer(IDLE);
+    }
   }, [token, queryClient]);
 
   const login = useCallback(

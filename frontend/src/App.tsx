@@ -6,6 +6,9 @@ import { AssignmentsPage } from "./pages/AssignmentsPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CoursesPage } from "./pages/CoursesPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { StatsPage } from "./pages/StatsPage";
+import { StudyPage } from "./pages/StudyPage";
+import { TimerProvider } from "./timer/TimerContext";
 
 export function App() {
   return (
@@ -15,10 +18,19 @@ export function App() {
 
       {/* Everything inside RequireAuth needs a logged-in user. */}
       <Route element={<RequireAuth />}>
-        <Route element={<Layout />}>
+        {/* The timer wraps every logged-in page, so it keeps running as you navigate. */}
+        <Route
+          element={
+            <TimerProvider>
+              <Layout />
+            </TimerProvider>
+          }
+        >
           <Route index element={<Navigate to="/assignments" replace />} />
           <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/study" element={<StudyPage />} />
+          <Route path="/stats" element={<StatsPage />} />
         </Route>
       </Route>
 
