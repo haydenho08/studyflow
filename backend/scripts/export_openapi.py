@@ -16,7 +16,8 @@ OUTPUT = Path(__file__).resolve().parents[2] / "frontend" / "openapi.json"
 
 def main() -> None:
     OUTPUT.parent.mkdir(exist_ok=True)
-    OUTPUT.write_text(json.dumps(app.openapi(), indent=2) + "\n", encoding="utf-8")
+    # newline="\n": the same bytes on Windows and Linux, so regenerating never shows a fake diff.
+    OUTPUT.write_text(json.dumps(app.openapi(), indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"Wrote {OUTPUT}")
 
 
