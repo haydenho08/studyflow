@@ -2,17 +2,15 @@ import { useState } from "react";
 
 import type { Course, DayStats } from "../api/types";
 import { useDisplayColor } from "../hooks/useDisplayColor";
+import { useElementWidth } from "../hooks/useElementWidth";
 import { roundedTopPath, timeTicks } from "../lib/chart";
 import { formatDuration, parseLocalDate } from "../lib/week";
 
-// Drawing space (SVG user units; the SVG scales to its container's width).
-const WIDTH = 640;
+// Drawn at the container's real pixel width (measured), not scaled from a fixed viewBox:
+// scaling would shrink the 12px axis text to ~6px on a phone.
 const HEIGHT = 240;
 const MARGIN = { top: 24, right: 8, bottom: 40, left: 52 };
-const PLOT_W = WIDTH - MARGIN.left - MARGIN.right;
 const PLOT_H = HEIGHT - MARGIN.top - MARGIN.bottom;
-const BAND = PLOT_W / 7;
-const BAR_W = Math.min(24, BAND * 0.5); // thin columns: the rest of the band is air
 const GAP = 2; // surface-coloured gap between stacked segments
 
 const weekday = new Intl.DateTimeFormat(undefined, { weekday: "short" });
@@ -29,6 +27,14 @@ interface Props {
 export function WeekChart({ days, courses }: Props) {
   const color = useDisplayColor();
   const [active, setActive] = useState<number | null>(null);
+  const [plotRef, measured] = useElementWidth<HTMLDivElement>(640);
+
+  const WIDTH = Math.max(measured, 280);
+  const BAND = (WIDTH - MARGIN.left - MARGIN.right) / 7;
+  const BAR_W = Math.min(24, BAND * 0.5); // thin columns: the rest of the band is air
+  // "1h 40m" needs ~46px. In narrower bands the cap labels would collide, so drop them;
+  // every value is still in the tooltip and the table view.
+  const showValueLabels = BAND >= 46;
 
   const maxMinutes = Math.max(...days.map((d) => d.total_seconds / 60));
   const ticks = timeTicks(maxMinutes);
@@ -50,8 +56,14 @@ export function WeekChart({ days, courses }: Props) {
         </ul>
       )}
 
-      <div className="chart-plot">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" aria-label="Study time per day">
+      <div className="chart-plot" ref={plotRef}>
+        <svg
+          width={WIDTH}
+          height={HEIGHT}
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          role="group"
+          aria-label="Study time per day"
+        >
           {/* Recessive hairline gridlines + y-axis labels */}
           {ticks.map((t) => (
             <g key={t}>
@@ -99,7 +111,7 @@ export function WeekChart({ days, courses }: Props) {
                     <rect key={s.course.id} x={x} y={segTop} width={BAR_W} height={h} fill={color(s.course.color)} />
                   );
                 })}
-                {day.total_seconds > 0 && (
+                {showValueLabels && day.total_seconds > 0 && (
                   <text className="value-label" x={cx} y={y(cumulative) - 6} textAnchor="middle">
                     {formatDuration(day.total_seconds)}
                   </text>
