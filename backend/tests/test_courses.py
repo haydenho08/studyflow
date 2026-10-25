@@ -29,7 +29,9 @@ def test_courses_are_listed_by_code(client, alice, make_course):
 def test_patch_only_changes_fields_that_were_sent(client, alice, make_course):
     course = make_course(alice, name="Intro to CS", color="#111111")
 
-    response = client.patch(f"/api/courses/{course['id']}", json={"color": "#222222"}, headers=alice)
+    response = client.patch(
+        f"/api/courses/{course['id']}", json={"color": "#222222"}, headers=alice
+    )
 
     assert response.status_code == 200
     updated = response.json()
@@ -47,7 +49,14 @@ def test_patch_with_empty_body_is_a_no_op(client, alice, make_course):
 
 @pytest.mark.parametrize(
     "patch",
-    [{"name": None}, {"code": None}, {"color": None}, {"name": "   "}, {"color": "red"}, {"nme": "typo"}],
+    [
+        {"name": None},
+        {"code": None},
+        {"color": None},
+        {"name": "   "},
+        {"color": "red"},
+        {"nme": "typo"},
+    ],
     ids=["null-name", "null-code", "null-color", "blank-name", "bad-color", "unknown-field"],
 )
 def test_patch_validation_errors(client, alice, make_course, patch):
@@ -86,7 +95,9 @@ def test_patch_into_duplicate_code_conflicts(client, alice, make_course):
     make_course(alice, code="EECS 1012")
     other = make_course(alice, code="EECS 1019")
 
-    response = client.patch(f"/api/courses/{other['id']}", json={"code": "EECS 1012"}, headers=alice)
+    response = client.patch(
+        f"/api/courses/{other['id']}", json={"code": "EECS 1012"}, headers=alice
+    )
 
     assert response.status_code == 409
 

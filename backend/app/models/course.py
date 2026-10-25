@@ -17,9 +17,7 @@ class Course(TimestampMixin, Base):
     __table_args__ = (UniqueConstraint("user_id", "code"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(100))
     code: Mapped[str] = mapped_column(String(20))
     color: Mapped[str] = mapped_column(String(7))  # "#RRGGBB"

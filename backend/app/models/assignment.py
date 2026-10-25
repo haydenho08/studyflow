@@ -30,7 +30,8 @@ def _str_enum(enum_cls: type[StrEnum], name: str) -> Enum:
 
 class Assignment(TimestampMixin, Base):
     __tablename__ = "assignments"
-    # Covers "this course's assignments, ordered by due date"; also serves lookups by course_id alone.
+    # Covers "this course's assignments, ordered by due date";
+    # also serves lookups by course_id alone.
     __table_args__ = (Index("ix_assignments_course_id_due_at", "course_id", "due_at"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)

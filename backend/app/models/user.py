@@ -13,7 +13,8 @@ class User(TimestampMixin, Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # Always stored lowercased (see schemas.auth), so the unique constraint is case-insensitive in practice.
+    # Always stored lowercased (see schemas.auth), so the unique constraint is
+    # case-insensitive in practice.
     email: Mapped[str] = mapped_column(String(320), unique=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
 

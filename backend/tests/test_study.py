@@ -76,7 +76,8 @@ def test_cannot_log_to_someone_elses_course(bob, eecs, log):
 def test_overlapping_sessions_are_rejected_across_courses(alice, eecs, math, log):
     assert log(alice, eecs["id"], "2026-10-12T10:00:00Z", minutes=25).status_code == 201
 
-    # Starts inside, contains, or ends inside the existing session: all conflicts, even on another course.
+    # Starts inside, contains, or ends inside the existing session:
+    # all conflicts, even on another course.
     assert log(alice, math["id"], "2026-10-12T10:10:00Z", minutes=25).status_code == 409
     assert log(alice, math["id"], "2026-10-12T09:50:00Z", minutes=60).status_code == 409
     assert log(alice, math["id"], "2026-10-12T09:50:00Z", minutes=15).status_code == 409
@@ -109,7 +110,9 @@ def test_list_is_newest_first_and_filterable(client, alice, eecs, math, log):
 
     assert ids() == [third["id"], second["id"], first["id"]]
     assert ids(course_id=eecs["id"]) == [third["id"], first["id"]]
-    assert ids(started_from="2026-10-13T00:00:00Z", started_to="2026-10-14T00:00:00Z") == [second["id"]]
+    assert ids(started_from="2026-10-13T00:00:00Z", started_to="2026-10-14T00:00:00Z") == [
+        second["id"]
+    ]
     assert ids(limit=1) == [third["id"]]
 
 
@@ -199,7 +202,9 @@ def test_same_sessions_bucket_differently_in_utc(client, alice, week_of_study):
 
 def test_week_containing_dst_change_uses_local_midnights(client, alice, eecs, log):
     # Clocks spring forward on Sunday 2026-03-08, so the week Mon Mar 2 - Sun Mar 8 is 167 hours.
-    assert log(alice, eecs["id"], "2026-03-08T23:30:00-04:00", 20).status_code == 201  # Sun night: in
+    assert (
+        log(alice, eecs["id"], "2026-03-08T23:30:00-04:00", 20).status_code == 201
+    )  # Sun night: in
     assert log(alice, eecs["id"], "2026-03-09T00:30:00-04:00", 20).status_code == 201  # Mon: out
     # A window computed in UTC ("start + 168 hours") would end at 01:00 local on Monday and wrongly
     # include the 00:30 session. (Python's aware-datetime + timedelta is wall-clock arithmetic and
@@ -208,9 +213,11 @@ def test_week_containing_dst_change_uses_local_midnights(client, alice, eecs, lo
     stats = week(client, alice, start="2026-03-02")
 
     assert stats["session_count"] == 1
-    assert stats["days"][6] == {"day": "2026-03-08", "total_seconds": 20 * 60, "courses": [
-        {"course_id": eecs["id"], "seconds": 20 * 60}
-    ]}
+    assert stats["days"][6] == {
+        "day": "2026-03-08",
+        "total_seconds": 20 * 60,
+        "courses": [{"course_id": eecs["id"], "seconds": 20 * 60}],
+    }
 
 
 def test_empty_week_is_all_zeros(client, alice):
@@ -235,4 +242,7 @@ def test_week_stats_validation(client, alice, params):
 
 
 def test_stats_require_auth(client):
-    assert client.get("/api/stats/week", params={"start": "2026-10-12", "tz": "UTC"}).status_code == 401
+    assert (
+        client.get("/api/stats/week", params={"start": "2026-10-12", "tz": "UTC"}).status_code
+        == 401
+    )

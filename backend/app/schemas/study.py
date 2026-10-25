@@ -1,7 +1,14 @@
 import datetime as dt
 from datetime import UTC, timedelta
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, computed_field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from app.schemas.common import to_utc
 

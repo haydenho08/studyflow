@@ -103,7 +103,10 @@ def test_me_rejects_expired_token(client):
         algorithm=settings.jwt_algorithm,
     )
 
-    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
+    assert (
+        client.get("/api/auth/me", headers={"Authorization": f"Bearer {expired}"}).status_code
+        == 401
+    )
 
 
 def test_me_rejects_token_signed_with_another_key(client):
@@ -114,9 +117,13 @@ def test_me_rejects_token_signed_with_another_key(client):
         algorithm="HS256",
     )
 
-    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {forged}"}).status_code == 401
+    assert (
+        client.get("/api/auth/me", headers={"Authorization": f"Bearer {forged}"}).status_code == 401
+    )
 
 
 def test_me_rejects_token_for_deleted_user(client):
     token = create_access_token(user_id=999_999)
-    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+    assert (
+        client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+    )

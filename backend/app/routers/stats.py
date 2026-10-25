@@ -41,7 +41,8 @@ def week_stats(
     week_start = dt.datetime.combine(start, dt.time.min, tzinfo=zone)
     week_end = dt.datetime.combine(start + dt.timedelta(days=7), dt.time.min, tzinfo=zone)
 
-    # timezone(zone, timestamptz) gives the local wall-clock time; casting to DATE gives the local day.
+    # timezone(zone, timestamptz) gives the local wall-clock time;
+    # casting that to DATE gives the local day.
     local_day = cast(func.timezone(tz, StudySession.started_at), Date).label("day")
     seconds = func.sum(func.extract("epoch", StudySession.ended_at - StudySession.started_at))
 
@@ -75,7 +76,9 @@ def week_stats(
     for offset in range(7):  # every day appears, even with zero study, so charts have no gaps
         day = start + dt.timedelta(days=offset)
         entries = sorted(by_day.get(day, []), key=lambda c: c.course_id)
-        days.append(DayStats(day=day, total_seconds=sum(c.seconds for c in entries), courses=entries))
+        days.append(
+            DayStats(day=day, total_seconds=sum(c.seconds for c in entries), courses=entries)
+        )
 
     courses = sorted(
         (

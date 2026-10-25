@@ -17,7 +17,8 @@ class AssignmentCreate(BaseModel):
     title: Title
     description: Description | None = None
     kind: AssignmentKind = AssignmentKind.ASSIGNMENT
-    # AwareDatetime rejects "2026-11-01T23:59:00" (no offset): we can't guess which timezone it meant.
+    # AwareDatetime rejects "2026-11-01T23:59:00" (no offset):
+    # we can't guess which timezone it meant.
     due_at: AwareDatetime
     priority: Priority = Priority.MEDIUM
     status: Status = Status.TODO

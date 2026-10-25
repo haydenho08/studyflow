@@ -1,0 +1,24 @@
+# Ruff: linter + formatter. CI runs `ruff check .` and `ruff format --check .`.
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = [
+  "E", "W",  # pycodestyle
+  "F",       # pyflakes: unused imports/variables, undefined names
+  "I",       # import sorting
+  "B",       # bugbear: likely bugs (mutable defaults, etc.)
+  "UP",      # pyupgrade: modern syntax for the target version
+  "SIM",     # simplifications
+]
+ignore = [
+  "B008",  # FastAPI's Depends()/Query() in defaults is the intended pattern
+]
+
+[lint.isort]
+# The local alembic/ folder makes Ruff guess "alembic" is our own package; it's the library.
+known-first-party = ["app"]
+known-third-party = ["alembic"]
+
+[lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501"]  # generated migration lines can run long

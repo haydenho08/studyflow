@@ -46,8 +46,16 @@ def test_due_at_is_stored_and_returned_in_utc(client, alice, course, make_assign
         {"title": None},
         {"user_id": 1},  # ownership can't be set from the body
     ],
-    ids=["naive-datetime", "unparseable-date", "bad-priority", "bad-status", "bad-kind",
-         "empty-title", "null-title", "unknown-field"],
+    ids=[
+        "naive-datetime",
+        "unparseable-date",
+        "bad-priority",
+        "bad-status",
+        "bad-kind",
+        "empty-title",
+        "null-title",
+        "unknown-field",
+    ],
 )
 def test_create_validation_errors(client, alice, course, fields):
     body = {"course_id": course["id"], "title": "Lab 1", "due_at": "2026-11-02T23:59:00Z", **fields}
@@ -69,19 +77,34 @@ def two_courses_of_work(alice, make_course, make_assignment):
     return {
         "eecs": eecs,
         "math": math,
-        "lab": make_assignment(alice, eecs["id"], title="Lab", kind="lab",
-                               due_at="2026-11-02T12:00:00Z", status="done"),
-        "quiz": make_assignment(alice, math["id"], title="Quiz", kind="quiz",
-                                due_at="2026-11-04T12:00:00Z", priority="high"),
-        "exam": make_assignment(alice, eecs["id"], title="Midterm", kind="exam",
-                                due_at="2026-11-09T12:00:00Z", status="in_progress"),
+        "lab": make_assignment(
+            alice, eecs["id"], title="Lab", kind="lab", due_at="2026-11-02T12:00:00Z", status="done"
+        ),
+        "quiz": make_assignment(
+            alice,
+            math["id"],
+            title="Quiz",
+            kind="quiz",
+            due_at="2026-11-04T12:00:00Z",
+            priority="high",
+        ),
+        "exam": make_assignment(
+            alice,
+            eecs["id"],
+            title="Midterm",
+            kind="exam",
+            due_at="2026-11-09T12:00:00Z",
+            status="in_progress",
+        ),
     }
 
 
 def test_list_is_sorted_by_due_date(client, alice, two_courses_of_work):
     w = two_courses_of_work
     assert ids(client.get("/api/assignments", headers=alice)) == [
-        w["lab"]["id"], w["quiz"]["id"], w["exam"]["id"]
+        w["lab"]["id"],
+        w["quiz"]["id"],
+        w["exam"]["id"],
     ]
 
 
@@ -107,7 +130,8 @@ def test_filter_by_several_statuses(client, alice, two_courses_of_work):
     # Repeated parameter = OR: everything that isn't done.
     params = [("status", "todo"), ("status", "in_progress")]
     assert ids(client.get("/api/assignments", params=params, headers=alice)) == [
-        w["quiz"]["id"], w["exam"]["id"]
+        w["quiz"]["id"],
+        w["exam"]["id"],
     ]
     # Combined with a date bound: "overdue" = not done and due before a moment.
     params += [("due_to", "2026-11-05T00:00:00Z")]
@@ -116,10 +140,12 @@ def test_filter_by_several_statuses(client, alice, two_courses_of_work):
 
 def test_filter_by_due_range_is_half_open(client, alice, two_courses_of_work):
     w = two_courses_of_work
-    # [Nov 2 12:00, Nov 9 12:00): includes the lab exactly at the start, excludes the exam exactly at the end.
+    # [Nov 2 12:00, Nov 9 12:00): includes the lab exactly at the start,
+    # excludes the exam exactly at the end.
     params = {"due_from": "2026-11-02T12:00:00Z", "due_to": "2026-11-09T12:00:00Z"}
     assert ids(client.get("/api/assignments", params=params, headers=alice)) == [
-        w["lab"]["id"], w["quiz"]["id"]
+        w["lab"]["id"],
+        w["quiz"]["id"],
     ]
 
 
@@ -162,15 +188,22 @@ def test_patch_updates_only_sent_fields(client, alice, course, make_assignment):
 
 def test_patch_can_clear_nullable_description(client, alice, course, make_assignment):
     a = make_assignment(alice, course["id"], description="Read chapter 3")
-    response = client.patch(f"/api/assignments/{a['id']}", json={"description": None}, headers=alice)
+    response = client.patch(
+        f"/api/assignments/{a['id']}", json={"description": None}, headers=alice
+    )
     assert response.status_code == 200
     assert response.json()["description"] is None
 
 
 @pytest.mark.parametrize(
     "patch",
-    [{"title": None}, {"due_at": None}, {"status": None}, {"course_id": None},
-     {"due_at": "2026-11-02T23:59:00"}],
+    [
+        {"title": None},
+        {"due_at": None},
+        {"status": None},
+        {"course_id": None},
+        {"due_at": "2026-11-02T23:59:00"},
+    ],
     ids=["null-title", "null-due-at", "null-status", "null-course", "naive-due-at"],
 )
 def test_patch_validation_errors(client, alice, course, make_assignment, patch):
@@ -178,11 +211,15 @@ def test_patch_validation_errors(client, alice, course, make_assignment, patch):
     assert client.patch(f"/api/assignments/{a['id']}", json=patch, headers=alice).status_code == 422
 
 
-def test_patch_can_move_assignment_to_another_own_course(client, alice, course, make_course, make_assignment):
+def test_patch_can_move_assignment_to_another_own_course(
+    client, alice, course, make_course, make_assignment
+):
     other = make_course(alice, code="MATH 1090")
     a = make_assignment(alice, course["id"])
 
-    response = client.patch(f"/api/assignments/{a['id']}", json={"course_id": other["id"]}, headers=alice)
+    response = client.patch(
+        f"/api/assignments/{a['id']}", json={"course_id": other["id"]}, headers=alice
+    )
 
     assert response.status_code == 200
     assert response.json()["course_id"] == other["id"]
@@ -199,18 +236,24 @@ def test_patch_cannot_move_assignment_into_someone_elses_course(
     )
 
     assert response.status_code == 404
-    assert client.get(f"/api/assignments/{a['id']}", headers=alice).json()["course_id"] == course["id"]
+    assert (
+        client.get(f"/api/assignments/{a['id']}", headers=alice).json()["course_id"] == course["id"]
+    )
 
 
 # --- isolation -------------------------------------------------------------------------------
 
 
-def test_users_cannot_see_or_touch_each_others_assignments(client, alice, bob, course, make_assignment):
+def test_users_cannot_see_or_touch_each_others_assignments(
+    client, alice, bob, course, make_assignment
+):
     a = make_assignment(alice, course["id"])
     url = f"/api/assignments/{a['id']}"
 
     assert client.get("/api/assignments", headers=bob).json() == []
-    assert client.get("/api/assignments", params={"course_id": course["id"]}, headers=bob).json() == []
+    assert (
+        client.get("/api/assignments", params={"course_id": course["id"]}, headers=bob).json() == []
+    )
     assert client.get(url, headers=bob).status_code == 404
     assert client.patch(url, json={"status": "done"}, headers=bob).status_code == 404
     assert client.delete(url, headers=bob).status_code == 404
@@ -227,7 +270,9 @@ def test_delete_assignment(client, alice, course, make_assignment):
     assert client.get(f"/api/assignments/{a['id']}", headers=alice).status_code == 404
 
 
-def test_deleting_course_deletes_its_assignments(client, alice, course, make_course, make_assignment, db):
+def test_deleting_course_deletes_its_assignments(
+    client, alice, course, make_course, make_assignment, db
+):
     other = make_course(alice, code="MATH 1090")
     doomed = [make_assignment(alice, course["id"], title=f"Lab {i}") for i in range(3)]
     survivor = make_assignment(alice, other["id"])
