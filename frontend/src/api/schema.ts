@@ -146,6 +146,65 @@ export interface paths {
         patch: operations["update_assignment_api_assignments__assignment_id__patch"];
         trace?: never;
     };
+    "/api/study-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sessions */
+        get: operations["list_sessions_api_study_sessions_get"];
+        put?: never;
+        /** Create Session */
+        post: operations["create_session_api_study_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/study-sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Session */
+        delete: operations["delete_session_api_study_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Week Stats
+         * @description Study time per day and per course for the 7 days starting at `start`.
+         *
+         *     "Which day" depends on where the student is: 22:00 Monday in Toronto is already Tuesday in
+         *     UTC. So the client sends its time zone, and days are computed in that zone. A session counts
+         *     on the day it started.
+         */
+        get: operations["week_stats_api_stats_week_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -275,6 +334,22 @@ export interface components {
              */
             updated_at: string;
         };
+        /** CourseSeconds */
+        CourseSeconds: {
+            /** Course Id */
+            course_id: number;
+            /** Seconds */
+            seconds: number;
+        };
+        /** CourseTotal */
+        CourseTotal: {
+            /** Course Id */
+            course_id: number;
+            /** Seconds */
+            seconds: number;
+            /** Sessions */
+            sessions: number;
+        };
         /** CourseUpdate */
         CourseUpdate: {
             /** Name */
@@ -283,6 +358,18 @@ export interface components {
             code?: string | null;
             /** Color */
             color?: string | null;
+        };
+        /** DayStats */
+        DayStats: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Total Seconds */
+            total_seconds: number;
+            /** Courses */
+            courses: components["schemas"]["CourseSeconds"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -299,6 +386,45 @@ export interface components {
          * @enum {string}
          */
         Status: "todo" | "in_progress" | "done";
+        /** StudySessionCreate */
+        StudySessionCreate: {
+            /** Course Id */
+            course_id: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+        };
+        /** StudySessionRead */
+        StudySessionRead: {
+            /** Id */
+            id: number;
+            /** Course Id */
+            course_id: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Duration Seconds */
+            readonly duration_seconds: number;
+        };
         /** Token */
         Token: {
             /** Access Token */
@@ -343,6 +469,24 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WeekStats */
+        WeekStats: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Timezone */
+            timezone: string;
+            /** Total Seconds */
+            total_seconds: number;
+            /** Session Count */
+            session_count: number;
+            /** Days */
+            days: components["schemas"]["DayStats"][];
+            /** Courses */
+            courses: components["schemas"]["CourseTotal"][];
         };
     };
     responses: never;
@@ -762,6 +906,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssignmentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_study_sessions_get: {
+        parameters: {
+            query?: {
+                course_id?: number | null;
+                /** @description Inclusive */
+                started_from?: string | null;
+                /** @description Exclusive */
+                started_to?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySessionRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_session_api_study_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudySessionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySessionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_session_api_study_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    week_stats_api_stats_week_get: {
+        parameters: {
+            query: {
+                /** @description First day of the week, e.g. a Monday */
+                start: string;
+                /** @description IANA time zone, e.g. America/Toronto */
+                tz: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeekStats"];
                 };
             };
             /** @description Validation Error */

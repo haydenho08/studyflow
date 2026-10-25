@@ -7,8 +7,12 @@ import type {
   Course,
   CourseCreate,
   CourseUpdate,
+  StudySession,
+  StudySessionCreate,
+  StudySessionFilters,
   Token,
   User,
+  WeekStats,
 } from "./types";
 
 export const authApi = {
@@ -35,4 +39,13 @@ export const assignmentsApi = {
   update: (id: number, changes: AssignmentUpdate) =>
     api<Assignment>(`/api/assignments/${id}`, { method: "PATCH", json: changes }),
   remove: (id: number) => api<void>(`/api/assignments/${id}`, { method: "DELETE" }),
+};
+
+export const studyApi = {
+  list: (filters: StudySessionFilters) =>
+    api<StudySession[]>("/api/study-sessions", { query: filters }),
+  create: (body: StudySessionCreate) =>
+    api<StudySession>("/api/study-sessions", { method: "POST", json: body }),
+  remove: (id: number) => api<void>(`/api/study-sessions/${id}`, { method: "DELETE" }),
+  week: (start: string, tz: string) => api<WeekStats>("/api/stats/week", { query: { start, tz } }),
 };

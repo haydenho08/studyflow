@@ -680,6 +680,260 @@
           }
         }
       }
+    },
+    "/api/study-sessions": {
+      "post": {
+        "tags": [
+          "study sessions"
+        ],
+        "summary": "Create Session",
+        "operationId": "create_session_api_study_sessions_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudySessionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySessionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "study sessions"
+        ],
+        "summary": "List Sessions",
+        "operationId": "list_sessions_api_study_sessions_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Course Id"
+            }
+          },
+          {
+            "name": "started_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive",
+              "title": "Started From"
+            },
+            "description": "Inclusive"
+          },
+          {
+            "name": "started_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exclusive",
+              "title": "Started To"
+            },
+            "description": "Exclusive"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StudySessionRead"
+                  },
+                  "title": "Response List Sessions Api Study Sessions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/study-sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "study sessions"
+        ],
+        "summary": "Delete Session",
+        "operationId": "delete_session_api_study_sessions__session_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats/week": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Week Stats",
+        "description": "Study time per day and per course for the 7 days starting at `start`.\n\n\"Which day\" depends on where the student is: 22:00 Monday in Toronto is already Tuesday in\nUTC. So the client sends its time zone, and days are computed in that zone. A session counts\non the day it started.",
+        "operationId": "week_stats_api_stats_week_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "First day of the week, e.g. a Monday",
+              "title": "Start"
+            },
+            "description": "First day of the week, e.g. a Monday"
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "IANA time zone, e.g. America/Toronto",
+              "title": "Tz"
+            },
+            "description": "IANA time zone, e.g. America/Toronto"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1024,6 +1278,47 @@
         ],
         "title": "CourseRead"
       },
+      "CourseSeconds": {
+        "properties": {
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "seconds": {
+            "type": "integer",
+            "title": "Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "seconds"
+        ],
+        "title": "CourseSeconds"
+      },
+      "CourseTotal": {
+        "properties": {
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "seconds": {
+            "type": "integer",
+            "title": "Seconds"
+          },
+          "sessions": {
+            "type": "integer",
+            "title": "Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "seconds",
+          "sessions"
+        ],
+        "title": "CourseTotal"
+      },
       "CourseUpdate": {
         "properties": {
           "name": {
@@ -1069,6 +1364,33 @@
         "type": "object",
         "title": "CourseUpdate"
       },
+      "DayStats": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "total_seconds": {
+            "type": "integer",
+            "title": "Total Seconds"
+          },
+          "courses": {
+            "items": {
+              "$ref": "#/components/schemas/CourseSeconds"
+            },
+            "type": "array",
+            "title": "Courses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "total_seconds",
+          "courses"
+        ],
+        "title": "DayStats"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1099,6 +1421,74 @@
           "done"
         ],
         "title": "Status"
+      },
+      "StudySessionCreate": {
+        "properties": {
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ended At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "course_id",
+          "started_at",
+          "ended_at"
+        ],
+        "title": "StudySessionCreate"
+      },
+      "StudySessionRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ended At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "started_at",
+          "ended_at",
+          "created_at",
+          "duration_seconds"
+        ],
+        "title": "StudySessionRead"
       },
       "Token": {
         "properties": {
@@ -1202,6 +1592,51 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WeekStats": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "total_seconds": {
+            "type": "integer",
+            "title": "Total Seconds"
+          },
+          "session_count": {
+            "type": "integer",
+            "title": "Session Count"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/DayStats"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "courses": {
+            "items": {
+              "$ref": "#/components/schemas/CourseTotal"
+            },
+            "type": "array",
+            "title": "Courses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "timezone",
+          "total_seconds",
+          "session_count",
+          "days",
+          "courses"
+        ],
+        "title": "WeekStats"
       }
     },
     "securitySchemes": {

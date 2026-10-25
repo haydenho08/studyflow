@@ -18,6 +18,19 @@ export type AssignmentKind = Schemas["AssignmentKind"];
 export type Priority = Schemas["Priority"];
 export type Status = Schemas["Status"];
 
+export type StudySession = Schemas["StudySessionRead"];
+export type StudySessionCreate = Schemas["StudySessionCreate"];
+export type WeekStats = Schemas["WeekStats"];
+export type DayStats = Schemas["DayStats"];
+
+/** Query parameters accepted by GET /api/study-sessions. */
+export type StudySessionFilters = {
+  course_id?: number;
+  started_from?: string;
+  started_to?: string;
+  limit?: number;
+};
+
 /** Query parameters accepted by GET /api/assignments. */
 export type AssignmentFilters = {
   course_id?: number;
