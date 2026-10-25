@@ -18,7 +18,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
   // Once the token is set this re-renders and redirects: back to the page that sent us here.
   if (isAuthenticated) {
-    const from = (location.state as { from?: string } | null)?.from ?? "/assignments";
+    const from = (location.state as { from?: string } | null)?.from ?? "/";
     return <Navigate to={from} replace />;
   }
 

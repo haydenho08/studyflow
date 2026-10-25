@@ -26,6 +26,7 @@ export function Layout() {
           StudyFlow
         </Link>
         <nav className="nav">
+          <NavLink to="/calendar">Calendar</NavLink>
           <NavLink to="/assignments">Assignments</NavLink>
           <NavLink to="/courses">Courses</NavLink>
           <NavLink to="/study">Study</NavLink>

@@ -4,6 +4,7 @@ import { RequireAuth } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
 import { AssignmentsPage } from "./pages/AssignmentsPage";
 import { AuthPage } from "./pages/AuthPage";
+import { CalendarPage } from "./pages/CalendarPage";
 import { CoursesPage } from "./pages/CoursesPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { StatsPage } from "./pages/StatsPage";
@@ -26,7 +27,8 @@ export function App() {
             </TimerProvider>
           }
         >
-          <Route index element={<Navigate to="/assignments" replace />} />
+          <Route index element={<Navigate to="/calendar" replace />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/study" element={<StudyPage />} />
