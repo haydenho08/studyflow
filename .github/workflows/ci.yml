@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch cancels the older, now-pointless run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (lint, migrations, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # A real Postgres 16, same as docker-compose: tests rely on timestamptz, CHECK and FK cascades.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: studyflow
+          POSTGRES_PASSWORD: studyflow
+          POSTGRES_DB: studyflow
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U studyflow"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://studyflow:studyflow@127.0.0.1:5432/studyflow
+      TEST_DATABASE_URL: postgresql+psycopg://studyflow:studyflow@127.0.0.1:5432/studyflow_test
+      # CI-only value; the real secret lives in the deployment platform, never in the repo.
+      JWT_SECRET_KEY: ci-only-not-a-secret-but-at-least-32-characters
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint and format check
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Create the test database
+        run: psql -h 127.0.0.1 -U studyflow -d studyflow -c "CREATE DATABASE studyflow_test"
+        env:
+          PGPASSWORD: studyflow
+
+      - name: Migrations apply, match the models, and roll back cleanly
+        run: |
+          alembic upgrade head
+          alembic check
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Tests
+        run: pytest
+
+      - name: OpenAPI schema committed for the frontend is up to date
+        run: |
+          python -m scripts.export_openapi
+          git diff --exit-code -- ../frontend/openapi.json
+
+  frontend:
+    name: Frontend (types, lint, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (exactly what the lockfile says)
+        run: npm ci
+
+      - name: Generated API types match openapi.json
+        run: |
+          npm run gen:api
+          git diff --exit-code -- src/api/schema.ts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Typecheck and build
+        run: npm run build
