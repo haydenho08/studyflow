@@ -102,6 +102,18 @@ def test_filter_by_status_priority_and_kind(client, alice, two_courses_of_work):
     assert get(course_id=w["eecs"]["id"], status="done") == [w["lab"]["id"]]
 
 
+def test_filter_by_several_statuses(client, alice, two_courses_of_work):
+    w = two_courses_of_work
+    # Repeated parameter = OR: everything that isn't done.
+    params = [("status", "todo"), ("status", "in_progress")]
+    assert ids(client.get("/api/assignments", params=params, headers=alice)) == [
+        w["quiz"]["id"], w["exam"]["id"]
+    ]
+    # Combined with a date bound: "overdue" = not done and due before a moment.
+    params += [("due_to", "2026-11-05T00:00:00Z")]
+    assert ids(client.get("/api/assignments", params=params, headers=alice)) == [w["quiz"]["id"]]
+
+
 def test_filter_by_due_range_is_half_open(client, alice, two_courses_of_work):
     w = two_courses_of_work
     # [Nov 2 12:00, Nov 9 12:00): includes the lab exactly at the start, excludes the exam exactly at the end.

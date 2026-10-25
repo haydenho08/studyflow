@@ -17,7 +17,8 @@ def list_assignments(
     db: DbSession,
     user: CurrentUser,
     course_id: int | None = None,
-    status_: Annotated[Status | None, Query(alias="status")] = None,
+    # Repeatable: ?status=todo&status=in_progress means "todo OR in_progress" (i.e. not done).
+    status_: Annotated[list[Status] | None, Query(alias="status")] = None,
     priority: Priority | None = None,
     kind: AssignmentKind | None = None,
     due_from: Annotated[
@@ -38,8 +39,8 @@ def list_assignments(
     )
     if course_id is not None:
         query = query.where(Assignment.course_id == course_id)
-    if status_ is not None:
-        query = query.where(Assignment.status == status_)
+    if status_:
+        query = query.where(Assignment.status.in_(status_))
     if priority is not None:
         query = query.where(Assignment.priority == priority)
     if kind is not None:
