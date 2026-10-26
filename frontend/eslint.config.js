@@ -18,4 +18,9 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
     },
   },
+  {
+    // Node scripts (screenshots). Callbacks passed to Playwright run in the page, hence browser too.
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 );
