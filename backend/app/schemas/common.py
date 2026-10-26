@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
+
+from pydantic import AfterValidator
 
 
 def reject_null(value: Any) -> Any:
@@ -15,3 +17,8 @@ def reject_null(value: Any) -> Any:
 
 def to_utc(value: datetime | None) -> datetime | None:
     return value.astimezone(UTC) if value is not None else None
+
+
+# For response models: whatever offset the database session hands back, the API always answers
+# in UTC ("...Z"). Doing this in the schema, not the DB connection, keeps it host-independent.
+UtcDatetime = Annotated[datetime, AfterValidator(to_utc)]

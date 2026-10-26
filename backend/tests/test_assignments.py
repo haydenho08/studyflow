@@ -32,6 +32,11 @@ def test_due_at_is_stored_and_returned_in_utc(client, alice, course, make_assign
     # 23:59 in Toronto (EST, UTC-5) on Nov 2 is 04:59 UTC on Nov 3.
     created = make_assignment(alice, course["id"], due_at="2026-11-02T23:59:00-05:00")
     assert created["due_at"] == "2026-11-03T04:59:00Z"
+    # Read it back so the value really comes from Postgres (the POST response can echo the
+    # in-memory object). The test DB session is in Asia/Kolkata on purpose; it must still be UTC.
+    fetched = client.get(f"/api/assignments/{created['id']}", headers=alice).json()
+    assert fetched["due_at"] == "2026-11-03T04:59:00Z"
+    assert fetched["created_at"].endswith("Z")
 
 
 @pytest.mark.parametrize(

@@ -1,10 +1,9 @@
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.models import AssignmentKind, Priority, Status
-from app.schemas.common import reject_null, to_utc
+from app.schemas.common import UtcDatetime, reject_null, to_utc
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Description = Annotated[str, Field(max_length=5000)]
@@ -51,8 +50,8 @@ class AssignmentRead(BaseModel):
     title: str
     description: str | None
     kind: AssignmentKind
-    due_at: datetime
+    due_at: UtcDatetime
     priority: Priority
     status: Status
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime

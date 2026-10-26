@@ -29,13 +29,14 @@ class TimestampMixin:
     )
 
 
-def make_engine(url: str) -> Engine:
-    # Every connection uses UTC, so timestamps come back from Postgres as UTC-aware datetimes.
+def make_engine(url: str, **connect_args: object) -> Engine:
     # connect_timeout: fail fast with an error instead of hanging if the database is unreachable.
+    # No session time zone is set here: connection poolers (e.g. Neon's) may reject startup
+    # options. API responses are converted to UTC by the schemas (schemas.common.UtcDatetime).
     return create_engine(
         url,
         pool_pre_ping=True,
-        connect_args={"options": "-c timezone=utc", "connect_timeout": 5},
+        connect_args={"connect_timeout": 5, **connect_args},
     )
 
 

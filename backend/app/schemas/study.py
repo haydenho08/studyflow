@@ -10,7 +10,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.schemas.common import to_utc
+from app.schemas.common import UtcDatetime, to_utc
 
 MIN_SESSION = timedelta(minutes=1)
 MAX_SESSION = timedelta(hours=12)
@@ -45,9 +45,9 @@ class StudySessionRead(BaseModel):
 
     id: int
     course_id: int
-    started_at: dt.datetime
-    ended_at: dt.datetime
-    created_at: dt.datetime
+    started_at: UtcDatetime
+    ended_at: UtcDatetime
+    created_at: UtcDatetime
 
     @computed_field  # derived, not stored: it can never disagree with the timestamps
     @property

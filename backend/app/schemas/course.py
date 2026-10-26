@@ -1,9 +1,8 @@
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 
-from app.schemas.common import reject_null
+from app.schemas.common import UtcDatetime, reject_null
 
 CourseName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 # "eecs 2030 " -> "EECS 2030", so codes compare (and stay unique) regardless of how they were typed.
@@ -40,5 +39,5 @@ class CourseRead(BaseModel):
     name: str
     code: str
     color: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime

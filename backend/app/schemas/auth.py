@@ -1,7 +1,6 @@
-from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.schemas.common import UtcDatetime
 from app.security import BCRYPT_MAX_BYTES
 
 
@@ -30,7 +29,7 @@ class UserRead(BaseModel):
 
     id: int
     email: str
-    created_at: datetime
+    created_at: UtcDatetime
 
 
 class Token(BaseModel):

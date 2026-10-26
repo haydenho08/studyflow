@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/config.py -> repo root, where .env lives next to docker-compose.yml
@@ -34,6 +34,19 @@ class Settings(BaseSettings):
     bcrypt_rounds: int = Field(default=12, ge=4, le=16)
 
     cors_origins: list[str] = ["http://localhost:5173"]
+
+    # Built frontend to serve (frontend/dist). Unset in development, where Vite serves it.
+    static_dir: Path | None = None
+
+    @field_validator("database_url", "test_database_url")
+    @classmethod
+    def use_psycopg_driver(cls, url: str) -> str:
+        """Hosts like Neon and Render hand out postgres:// or postgresql:// URLs. SQLAlchemy reads
+        those as "use the psycopg2 driver"; we use psycopg 3, so name it explicitly."""
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
 
 
 @lru_cache

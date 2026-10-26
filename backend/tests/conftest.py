@@ -23,7 +23,9 @@ assert make_url(TEST_DB_URL).database.endswith("_test"), (
     f"TEST_DATABASE_URL must name a *_test database, got {TEST_DB_URL!r}"
 )
 
-engine = make_engine(TEST_DB_URL)
+# A deliberately non-UTC session time zone: every response must still say "...Z", proving the
+# API normalises to UTC itself instead of relying on how the database connection is configured.
+engine = make_engine(TEST_DB_URL, options="-c timezone=Asia/Kolkata")
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 AuthHeaders = dict[str, str]
