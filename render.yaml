@@ -1,0 +1,18 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repo.
+# The database is Neon (free Postgres); paste its connection string as DATABASE_URL when asked.
+services:
+  - type: web
+    name: studyflow
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    # Deploy a commit only after GitHub Actions passes on it.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        sync: false # secret: entered in the Render dashboard, never committed
+      - key: JWT_SECRET_KEY
+        generateValue: true # Render generates a random secret once and keeps it
+      - key: CORS_ORIGINS
+        value: "[]" # same-origin in production: the API serves the frontend itself

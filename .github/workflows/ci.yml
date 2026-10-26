@@ -111,3 +111,12 @@ jobs:
 
       - name: Typecheck and build
         run: npm run build
+
+  docker:
+    name: Production image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Same Dockerfile Render deploys: if it can't build here, a deploy would fail too.
+      - name: Build
+        run: docker build -t studyflow:ci .
