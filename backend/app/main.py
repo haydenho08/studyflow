@@ -1,12 +1,16 @@
+from pathlib import Path
+
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.frontend import mount_frontend
 from app.routers import assignments, auth, courses, stats, study_sessions
 
 
-def create_app() -> FastAPI:
+def create_app(static_dir: Path | None = None) -> FastAPI:
     settings = get_settings()
+    static_dir = static_dir or settings.static_dir
     app = FastAPI(
         title="StudyFlow API",
         version="0.1.0",
@@ -31,6 +35,10 @@ def create_app() -> FastAPI:
     api.include_router(study_sessions.router)
     api.include_router(stats.router)
     app.include_router(api)
+
+    # In production the container ships the built frontend; in development Vite serves it.
+    if static_dir is not None and (static_dir / "index.html").is_file():
+        mount_frontend(app, static_dir)
     return app
 
 
