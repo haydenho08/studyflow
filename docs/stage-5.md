@@ -78,6 +78,44 @@ Fixing that exposed one more thing: after logout the **tab title stayed** "23:59
 - **Screenshots as code** (`npm run screenshots`): Playwright logs in through the API, plants the token (and, for the Study page, a running timer) with `addInitScript`, and captures six views at 2× in a fixed time zone and locale. It uses `playwright-core` with `channel: "msedge"`, i.e. the Edge already installed on Windows, so there's no extra browser download. When the UI changes, screenshots are one command away instead of a manual chore. Two small fixes along the way: Playwright wants a string path, not a `URL` (`fileURLToPath`), and the stats shot navigates straight to last week's URL, because on a Monday this week is empty.
 - **README** written for a 30-second skim: CI badge, a hero screenshot, a grid of the other views, then features, engineering highlights (each linking to its walkthrough), an architecture diagram (Mermaid, rendered by GitHub), testing summary, and setup.
 
-## 6. Deployment
+## 6. Deployment: one container
 
-*To be decided together. See the end of this stage's conversation for the options.*
+**Decision: FastAPI serves the built React app,** one Docker image on Render, with the database on Neon. Step-by-step instructions are in [deployment.md](deployment.md).
+
+Why one container rather than "frontend on a CDN, API elsewhere":
+- **Same origin:** no CORS, no API URL baked into the frontend build, and cookies (a future upgrade from localStorage tokens) would just work.
+- **One deploy, one URL, atomic releases:** the frontend and the API it was built against always ship together, so they can't be out of sync.
+- **Trade-off:** static files aren't served from a global CDN. For a student app that's fine, and long-lived caching of the hashed assets recovers most of the benefit.
+
+### Serving a single-page app from FastAPI (`app/frontend.py`)
+
+- `/assets/*` (filenames contain a content hash) is served with `Cache-Control: public, max-age=31536000, immutable`: a given URL's contents never change, so browsers may cache them for a year. A new build produces new filenames.
+- Any other `GET` that would 404 (e.g. `/calendar?week=…`) returns `index.html` with `no-cache`, so client-side routes work on a refresh or a shared link, and browsers always check for the newest `index.html` (which points at the newest assets).
+- **Not** for `/api/*` (an unknown endpoint is a JSON 404, and the API's own errors pass through untouched) or `/assets/*` (a missing script must be a 404; HTML in place of JavaScript only produces a confusing error in the browser).
+- Implemented as a 404 exception handler rather than a catch-all route, so methods other than GET (e.g. `POST /api/nope`) still get proper 404s. 14 tests in `test_deploy.py` cover it.
+
+### Making the backend host-agnostic
+
+- **Database URLs:** hosts hand out `postgres://…`/`postgresql://…`, which SQLAlchemy reads as "use psycopg2". A settings validator rewrites them to `postgresql+psycopg://` (psycopg 3).
+- **UTC without session settings.** Until now every connection was opened with `-c timezone=utc`. Connection poolers like Neon's may reject such startup options, so instead the response schemas convert every timestamp to UTC (`UtcDatetime`). To *prove* it, the test database connection now deliberately uses **Asia/Kolkata**.
+
+  The proof needed fixing first. Removing the conversion from `due_at` **didn't fail any test**, because the test only checked the POST response, and with `expire_on_commit=False` SQLAlchemy returns the in-memory value the code had just set, never what Postgres sends back. The test now also GETs the assignment, and with the conversion removed it fails with `'2026-11-03T10:29:00+05:30'`. A test should read back from the place where the bug would happen.
+
+### The Dockerfile
+
+- **Multi-stage:** a Node stage runs `npm ci && npm run build`; the Python stage copies only `dist/`. Node and `node_modules` never reach the final image (316 MB, mostly Python and its dependencies).
+- **Layer caching:** the lockfile/requirements are copied *before* the source, so dependency installs are cached until the dependencies actually change.
+- **Non-root user,** `PYTHONUNBUFFERED` (logs appear immediately), no pip cache, and a `.dockerignore` that keeps `.env`, `.git`, `node_modules` and the tests out of the build context.
+- **Start-up:** `alembic upgrade head && exec uvicorn … --port ${PORT:-8000} --proxy-headers`. `exec` makes uvicorn PID 1 so it receives the platform's shutdown signal. `--proxy-headers` trusts Render's proxy for the original scheme and client IP.
+- **CI builds the image on every push**, so a broken Dockerfile fails in CI, not during a deploy.
+
+Verified locally before creating any accounts: the container started against a **fresh empty database** using a `postgresql://` URL and Render's `PORT=10000`, ran both migrations, served pages, deep links, cached assets and JSON 404s correctly, ran as the non-root user, and the app worked in a real browser with zero console errors.
+
+### Configuration and secrets (`render.yaml`)
+
+- `DATABASE_URL` is `sync: false`: entered in Render's dashboard, never in git.
+- `JWT_SECRET_KEY` uses `generateValue: true`: Render creates a random secret once. Nobody ever sees or types it, so it can't leak from a laptop or a chat.
+- `CORS_ORIGINS=[]`: same-origin in production, so no cross-origin access at all.
+- `autoDeployTrigger: checksPass`: a commit is deployed only after GitHub Actions passes on it, which makes CI a real gate rather than a report.
+
+> **Interview Q:** *"Walk me through how your app gets to production."* Push → CI (lint, migrations, tests, generated-file checks, image build) → only on green, Render builds the same Dockerfile → the container migrates the database and starts → health check on `/api/health` → traffic switches over.

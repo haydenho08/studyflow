@@ -52,9 +52,9 @@ In development, Vite proxies `/api` to FastAPI, so the browser sees a single ori
 
 | | |
 |---|---|
-| **Backend** | 94 pytest tests against a real PostgreSQL: auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks |
+| **Backend** | 108 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend |
 | **Frontend** | 60 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection |
-| **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, both test suites, typecheck + production build, generated-file freshness checks |
+| **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, both test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
 
 ## Running locally
 
@@ -92,7 +92,7 @@ docs/      Stage-by-stage design walkthroughs and screenshots
 
 ## Roadmap
 
-- Deployment with a public demo account
+- Live demo (deployment is set up: see [docs/deployment.md](docs/deployment.md))
 - Playwright end-to-end tests in CI
 - `.ics` calendar feed (per-user secret URL) for Google/Apple Calendar
 - Refresh tokens / httpOnly cookie auth
