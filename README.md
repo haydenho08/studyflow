@@ -96,3 +96,7 @@ docs/      Stage-by-stage design walkthroughs and screenshots
 - Playwright end-to-end tests in CI
 - `.ics` calendar feed (per-user secret URL) for Google/Apple Calendar
 - Refresh tokens / httpOnly cookie auth
+
+## License
+
+[MIT](LICENSE) © Hayden Ho
