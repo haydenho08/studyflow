@@ -21,8 +21,6 @@ A public repo is effectively permanent: it gets cloned, forked and indexed quick
 - **Test credentials.** Not in any tracked file (`git grep`).
 - **Identity.** Every commit carries its author email, publicly and permanently. GitHub offers a private `…@users.noreply.github.com` address that still counts on the contribution graph; you must decide before the first push, because changing it afterwards means rewriting published history.
 
-> **Interview Q:** *"What would you do if you committed a secret?"* Rotate it immediately (assume it's compromised the moment it's pushed), *then* clean history (`git filter-repo`) and force-push. Cleaning history alone isn't enough, because clones and caches already have it.
-
 ## 2. Continuous integration
 
 `ci.yml` runs on every push to `main` and every pull request, as two **parallel jobs**:
@@ -33,7 +31,7 @@ A public repo is effectively permanent: it gets cloned, forked and indexed quick
 | `ruff check` + `ruff format --check` | Regenerate `schema.ts` → `git diff --exit-code` (stale types fail) |
 | Create the test DB | ESLint |
 | `alembic upgrade head` → `alembic check` → `downgrade base` → `upgrade head` | Vitest (60 tests) |
-| pytest (94 tests) | `tsc --noEmit` + `vite build` |
+| pytest (108 tests) | `tsc --noEmit` + `vite build` |
 | Re-export `openapi.json` → `git diff --exit-code` | |
 
 Design points worth explaining:
@@ -46,15 +44,11 @@ Design points worth explaining:
 
 The first run on GitHub passed (backend 35 s), which is what dry-running every step locally before pushing buys you.
 
-> **Interview Q:** *"What does your CI check, and why each step?"* Walk through the table: each step catches a specific class of bug that has a story behind it in the earlier stages.
-
 ## 3. Linters, and what they found
 
 **Ruff** (Python lint + format) reformatted 10 files and flagged long lines and import order. One configuration lesson: Ruff guessed `alembic` was *our* package because the repo has a local `alembic/` folder, and sorted the library import in with ours. `known-third-party = ["alembic"]` fixed it. Hand-aligned data tables use `# fmt: off/on`, the standard escape hatch.
 
 **ESLint** with the React Hooks rules found a **real design smell** in the timer. "Focus finished → log it → start the break" lived in an effect that *reacted to* state (`now`) and then set more state. That's an extra render pass per transition, and exactly what React's "You might not need an effect" warns about. The fix moved the transition into the **interval callback**: the clock tick is the external event, and subscribing to external events is what effects are for. The guard against double-logging (`handledRef`) stayed, because two ticks can still land before React re-renders.
-
-> **Interview Q:** *"When should you use `useEffect`?"* To synchronise with something *outside* React (timers, subscriptions, the DOM, the network). Not to derive state from other state, and not to respond to events you could handle in the event handler itself.
 
 ## 4. A bug found by accident: the expiring token
 
@@ -69,8 +63,6 @@ The fix makes the policy precise:
 Verified in the browser: a dead token → `/login` with the timer kept → log in → exactly one `POST` (`1500 s`, the planned start and end) → break. Another user's timer is ignored, and Log out clears it.
 
 Fixing that exposed one more thing: after logout the **tab title stayed** "23:59 · Focus". The effect that sets `document.title` had no cleanup, so unmounting the timer left it behind. Effects that change something outside React must undo it in their cleanup.
-
-> **Interview Q:** *"Tell me about a bug you found."* This one is good because it's an *interaction* between two individually correct features (token expiry, logout clearing state), found by testing realistically rather than by a unit test.
 
 ## 5. Making the project presentable
 
@@ -117,5 +109,3 @@ Verified locally before creating any accounts: the container started against a *
 - `JWT_SECRET_KEY` uses `generateValue: true`: Render creates a random secret once. Nobody ever sees or types it, so it can't leak from a laptop or a chat.
 - `CORS_ORIGINS=[]`: same-origin in production, so no cross-origin access at all.
 - `autoDeployTrigger: checksPass`: a commit is deployed only after GitHub Actions passes on it, which makes CI a real gate rather than a report.
-
-> **Interview Q:** *"Walk me through how your app gets to production."* Push → CI (lint, migrations, tests, generated-file checks, image build) → only on green, Render builds the same Dockerfile → the container migrates the database and starts → health check on `/api/health` → traffic switches over.

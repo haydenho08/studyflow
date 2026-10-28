@@ -46,8 +46,6 @@ export type AssignmentFilters = QueryOf<"list_assignments_api_assignments_get">;
 
 Before, `AssignmentFilters` was hand-written and would have silently gone stale when `status` became a list. Now the compiler told me exactly which line (`toApiFilters`) needed updating. `client.ts` turns arrays into repeated parameters (`URLSearchParams.append`) and skips `null` and `undefined`.
 
-> **Interview Q:** *"How do you evolve an API without breaking clients?"* Additive changes only (new optional params, widen a scalar to a list that still accepts one value), generated client types so mismatches fail at compile time, and backwards-compatibility tests.
-
 ## 3. Dates: the calendar half of the time-zone story
 
 **Which day is a deadline on?** `due_at` is a UTC instant. "Lab due 23:59 Nov 2" is stored as `2026-11-03T04:59Z`; grouping by the UTC date would put it on the wrong day. `groupByLocalDay()` converts each instant to the **local calendar date** (`getFullYear/getMonth/getDate`, not `toISOString().slice(0, 10)`, which is the UTC date and a very common bug).
@@ -58,8 +56,6 @@ The tests use the week of **Oct 26–Nov 1, 2026**, which contains the end of da
 - `weekDays()` uses calendar arithmetic, so the 25-hour Sunday doesn't shift anything.
 
 **Overdue without an infinite loop.** "Overdue" naively means `due_to = now`. But React Query keys include the filters, and `now` changes every render, so that would mean a new cache key on every render, which means a refetch, a re-render, and a new key again. The overdue query uses **start of today** instead, which changes once a day. Items due earlier *today* are still flagged overdue by `isOverdue(a, now)` in the day columns, computed at render time without any request.
-
-> **Interview Q:** *"What should a React Query key contain?"* Exactly the inputs that change the result, and values that are stable across renders. Never a fresh timestamp or object identity.
 
 ## 4. The page
 
@@ -81,8 +77,6 @@ Checking the phone width exposed two older bugs:
 The measuring hook (`useElementWidth`) has two subtleties:
 - It measures **synchronously in `useLayoutEffect`** (after layout, before paint) and then follows changes with a `ResizeObserver`. With `useEffect` alone, the first frame painted at the fallback width and then jumped. I saw exactly that state in testing (a 640px chart in an 870px box) before switching.
 - **No feedback loop:** a child with a fixed pixel width can sometimes prop its container open so it can never shrink. I tested growing 301 → 870px and shrinking 870 → 301px without a reload.
-
-> **Interview Q:** *"`useEffect` vs `useLayoutEffect`?"* `useLayoutEffect` runs synchronously after DOM mutation, before paint: use it to measure layout and avoid a visible flicker. Everything else belongs in `useEffect`, because layout effects block painting.
 
 ## 5. Testing summary
 

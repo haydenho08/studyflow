@@ -39,8 +39,6 @@ Two real issues came up while wiring this, and both make good stories:
 - **Peer dependency conflict.** npm installed TypeScript 7 by default, but openapi-typescript is built on the TypeScript 5 compiler API (`peerDependencies: typescript ^5.x`). TS 7 is the rewritten native compiler and doesn't ship that JS API, so generation crashed with `ts.factory is undefined`. `npm ls typescript` showed the version as "invalid". The fix was to pin `typescript@5.9.3`.
 - **Request vs response types.** By default, openapi-typescript treats fields with a default (like `status = "todo"`) as *always present*. That's true in responses, but wrong for request bodies, where the client may omit them. The type checker caught it: the create form wasn't sending `status`. The fix is the `--default-non-nullable false` flag, after which `status?` is optional on create and required on read.
 
-> **Interview Q:** *"How do you keep frontend and backend in sync?"* Generate client types from the API schema, commit the generated file, and regenerate when the API changes (Stage 5's CI can check it's up to date).
-
 ## 2. Server state vs client state (React Query)
 
 Most "state" in this app is really a **copy of data that lives on the server**: courses, assignments, the current user. Keeping that in `useState` means hand-writing loading flags, error handling, refetching and caching on every page. TanStack Query does it once:
@@ -57,8 +55,6 @@ useQuery({ queryKey: ["assignments", filters], queryFn: () => assignmentsApi.lis
 
 Genuinely *client* state (is the edit form open? what's typed in the input?) stays in `useState`.
 
-> **Interview Q:** *"Why React Query rather than Redux or useEffect + fetch?"* Server data has different problems (staleness, caching, deduplication, refetching) from UI state. Use a tool built for each.
-
 ## 3. Authentication in a SPA
 
 ### Where the token lives
@@ -72,8 +68,6 @@ Genuinely *client* state (is the edit form open? what's typed in the input?) sta
 | httpOnly cookie | ✓ | ✗ | **✓** (needs SameSite/CSRF token) |
 
 We chose localStorage for simplicity and are explicit about the trade-off: if an attacker can run JavaScript on our page, they can read the token. Our mitigation is not having XSS: React escapes everything it renders, and we never use `dangerouslySetInnerHTML`. The production upgrade is an httpOnly, `SameSite=Strict` cookie set by the API.
-
-> **Interview Q:** *"Where do you store JWTs and why?"* Show the table. There is no free option, only trade-offs you choose deliberately.
 
 ### The flow
 
@@ -99,8 +93,6 @@ Stage 1 made the API strict: UTC in, UTC out, no ambiguous times. The frontend d
 - Display uses `Intl.DateTimeFormat` and `Intl.RelativeTimeFormat` ("Mon 2 Nov, 23:59 · in 9 days"), with no date library needed.
 
 The unit tests pin `TZ=America/Toronto` (in `vite.config.ts`) so they produce the same results on any machine and in CI, and they deliberately straddle the Nov 1 DST change. While writing them, I first assumed midnight Nov 1 was already EST. It isn't (clocks change at 2 a.m.), and the test caught my wrong assumption, which is exactly why these tests exist.
-
-> **Interview Q:** *"How does your app handle time zones?"* UTC on the wire and in the DB, local only at the edges (inputs and display), conversion code in one module, and tests pinned to a DST-observing zone.
 
 ## 6. URL as state
 

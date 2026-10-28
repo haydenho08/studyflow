@@ -35,8 +35,6 @@ The same pattern as Stage 1 continues:
 
 **Migration workflow, done properly this time:** with the database running, `alembic revision --autogenerate` produced the migration; I **reviewed it** (autogenerate can miss things like renamed columns or server defaults), then tested it both directions (`upgrade → downgrade → upgrade`), then ran `alembic check` to confirm no drift. Migrations that have never been downgraded are migrations you can't trust to roll back in an incident.
 
-> **Interview Q:** *"Should you store derived values?"* Only as a measured optimisation (a cache or materialised view), and then you own keeping it consistent. Default to deriving.
-
 ## 2. Validation that spans fields
 
 Single-field rules (`AwareDatetime`, `course_id: int`) live on fields. Rules that compare fields need a **`@model_validator(mode="after")`**, which sees the whole object:
@@ -55,8 +53,6 @@ A and B overlap  ⇔  A.start < B.end  AND  A.end > B.start
 Strict `<` means back-to-back Pomodoros (one ends 10:25, the next starts 10:25) are fine; there's a test for exactly that. This rule also makes logging **naturally idempotent**: if the timer ever tried to log the same block twice (two tabs, a retry), the second attempt is a harmless 409, not a duplicate.
 
 **Honest limitation:** it's check-then-insert, so two simultaneous requests could both pass the check. The airtight version is a Postgres **exclusion constraint** (`EXCLUDE USING gist (user_id WITH =, tstzrange(started_at, ended_at) WITH &&)`), which needs `user_id` on the row and the `btree_gist` extension, i.e. the denormalisation we avoided in Stage 1. For one student's timer, the race is theoretical, so I documented the trade-off rather than paying for it.
-
-> **Interview Q:** *"How would you prevent overlapping bookings?"* Interval overlap condition → app-level check → exclusion constraint for true concurrency safety. Knowing the third option is what makes the answer senior.
 
 ## 3. Weekly stats: whose Monday?
 
@@ -82,8 +78,6 @@ Then I checked that the test actually *catches* the bug it's meant to catch (mut
 - The real bug is doing the arithmetic in UTC: `week_start.astimezone(UTC) + timedelta(hours=168)`. With that, the test failed as it should. The test comment now names exactly which mistake it guards against.
 
 Also: my own first expectation in the UTC-bucketing test was wrong. A session at 23:00 Sunday Toronto moves *into* the week when bucketed in UTC (it's 03:00 Monday UTC). The test failure taught me the data was right and I was wrong, which is the best kind of failing test.
-
-> **Interview Q:** *"How do you handle aggregating time-series data across time zones?"* Store UTC; bucket in the viewer's zone at query time; validate the zone; test a DST week.
 
 ## 4. The timer: timestamps, not ticks
 
@@ -127,8 +121,6 @@ Design rules applied (from a data-viz checklist, with the colour part *computed*
 Every course used to default to the same blue, which makes a stacked chart useless. Now:
 1. New courses default to an **8-colour categorical palette**, in fixed order. I ran a validator over it against *our* surfaces: light mode passes colour-blind separation and lightness checks (three colours are under 3:1 contrast, which is why the labels and table matter); in dark mode the same light values **failed** the lightness band, so dark mode shows each palette colour's **dark-surface step** (`displayColor()`), which passes everything.
 2. Then the real chart showed my test user's EECS (old default `#3B82F6`) and PHYS (palette `#2A78D6`) as **near-identical blues**. "Skip colours already in use" wasn't enough. Two different hex values can look the same. The fix measures **perceptual distance in OKLab** (a colour space where straight-line distance ≈ perceived difference) and skips any palette colour within ΔE 15 of a colour in use. For that user, it now suggests aqua: blue is too close to EECS, and orange too close to MATH's red.
-
-> **Interview Q:** *"How do you make charts accessible?"* Never colour alone (labels, legend, table); keyboard and screen-reader access to the values; colours checked for colour-blind separation and contrast against the actual background, in both themes.
 
 ## 6. Testing summary
 

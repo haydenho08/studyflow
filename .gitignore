@@ -24,3 +24,6 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Personal notes kept out of the public repo
+*.local.md
