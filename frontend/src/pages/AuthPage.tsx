@@ -1,42 +1,25 @@
-import { ArrowRight, BarChart3, CalendarDays, ExternalLink, Timer } from "lucide-react";
+import { BarChart3, CalendarDays, ExternalLink, Timer } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation } from "react-router";
 
-import { ApiError } from "../api/client";
+import { DemoButton } from "../components/DemoButton";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { BrandMark } from "../components/Feedback";
 import { useAuth } from "../auth/AuthContext";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { SOURCE_URL } from "../lib/links";
 
 const MAX_PASSWORD_BYTES = 72; // bcrypt's limit, enforced by the API too
-const SOURCE_URL = "https://github.com/haydenho08/studyflow";
 
 /** What a first-time visitor (often a recruiter) sees: what this is, and a way in without sign-up. */
 function Pitch() {
-  const { loginDemo } = useAuth();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function startDemo() {
-    setError(null);
-    setPending(true);
-    try {
-      await loginDemo(); // on success the token is set and AuthPage redirects
-    } catch (err) {
-      setError(
-        err instanceof ApiError && err.status === 404
-          ? "The demo isn't switched on for this server."
-          : "Couldn't start the demo. The server may still be waking up: try again in a few seconds.",
-      );
-      setPending(false);
-    }
-  }
-
   return (
     <section className="pitch" aria-labelledby="pitch-title">
-      <h1 id="pitch-title" className="brand">
-        <BrandMark size={20} />
-        StudyFlow
+      <h1 id="pitch-title">
+        <Link to="/" className="brand">
+          <BrandMark size={20} />
+          StudyFlow
+        </Link>
       </h1>
       <p className="pitch-tagline">Your courses, deadlines and study time, in one place.</p>
       <ul className="pitch-features">
@@ -52,23 +35,10 @@ function Pitch() {
           Weekly stats: where your study hours actually went
         </li>
       </ul>
-      <button
-        type="button"
-        className="btn btn-primary btn-large"
-        onClick={startDemo}
-        disabled={pending}
-      >
-        {pending ? "Opening the demo…" : "Explore the demo"}
-        {!pending && <ArrowRight size={18} aria-hidden="true" />}
-      </button>
+      <DemoButton />
       <p className="muted pitch-note">
         No sign-up: a sample student account with this week's data.
       </p>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
       <p className="pitch-source">
         <a href={SOURCE_URL} target="_blank" rel="noreferrer">
           View the source on GitHub

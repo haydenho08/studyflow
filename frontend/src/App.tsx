@@ -1,19 +1,28 @@
 import { Navigate, Route, Routes } from "react-router";
 
+import { useAuth } from "./auth/AuthContext";
 import { RequireAuth } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
 import { AssignmentsPage } from "./pages/AssignmentsPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { CoursesPage } from "./pages/CoursesPage";
+import { LandingPage } from "./pages/LandingPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { StatsPage } from "./pages/StatsPage";
 import { StudyPage } from "./pages/StudyPage";
 import { TimerProvider } from "./timer/TimerContext";
 
+/** The front page for visitors; logged-in users go straight to their calendar. */
+function Home() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/calendar" replace /> : <LandingPage />;
+}
+
 export function App() {
   return (
     <Routes>
+      <Route index element={<Home />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
 
@@ -27,7 +36,6 @@ export function App() {
             </TimerProvider>
           }
         >
-          <Route index element={<Navigate to="/calendar" replace />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/courses" element={<CoursesPage />} />

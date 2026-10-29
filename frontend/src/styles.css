@@ -500,6 +500,10 @@ summary:focus-visible {
   gap: 0.9rem;
 }
 
+.pitch h1 {
+  margin: 0;
+}
+
 .pitch .brand {
   font-size: 2.4rem;
   gap: 0.7rem;
@@ -1681,5 +1685,487 @@ details.card[open] > summary {
   }
   .day.is-past:not(:has(.deadline)) {
     display: none; /* on a phone, empty past days are just scrolling */
+  }
+}
+
+/* --- landing page (the public front page) ------------------------------------------------- */
+
+.landing {
+  --landing-max: 1120px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing main {
+  flex: 1;
+}
+
+.landing-container {
+  width: min(100%, var(--landing-max));
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.landing h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  min-height: 3.75rem;
+}
+
+.landing-nav {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.landing-nav a,
+.landing-footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.925rem;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.landing-nav a:hover,
+.landing-footer-links a:hover {
+  color: var(--text);
+}
+
+.landing-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.landing-eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/* Hero: centred copy over a screenshot, with a soft glow of the brand colour behind it. */
+.landing-hero {
+  padding: 5rem 0 4rem;
+  text-align: center;
+  background: radial-gradient(
+    60rem 28rem at 50% -6rem,
+    color-mix(in srgb, var(--primary) 14%, transparent),
+    transparent 70%
+  );
+}
+
+.landing-hero h1 {
+  max-width: 15em;
+  margin: 0 auto 1.25rem;
+  font-size: clamp(2.1rem, 5.2vw, 3.5rem);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.landing-lede {
+  max-width: 36rem;
+  margin: 0 auto 2rem;
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+.landing-cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.landing-cta .demo-error {
+  max-width: 28rem;
+}
+
+.landing-note {
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+}
+
+.landing-hero-shot {
+  position: relative;
+  margin: 3.5rem auto 0;
+  max-width: 980px;
+}
+
+/* The phone screenshot overlaps the desktop one on wide screens; too cramped below that. */
+.landing-phone {
+  position: absolute;
+  left: -9rem;
+  bottom: -2.5rem;
+  z-index: 1;
+  width: 17%;
+  height: auto;
+  border-radius: 18px;
+  border: 5px solid var(--text);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 1300px) {
+  .landing-phone {
+    display: none;
+  }
+}
+
+.shot {
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.shot-bar {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.shot-bar span {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.landing-section {
+  padding: 5rem 0;
+}
+
+.landing-section + .landing-section {
+  border-top: 1px solid var(--border);
+}
+
+.landing-section-head {
+  max-width: 38rem;
+  margin: 0 auto 3.5rem;
+  text-align: center;
+}
+
+.landing-section-head h2 {
+  font-size: clamp(1.6rem, 3.4vw, 2.25rem);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.landing-section-head p:last-child {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* Feature rows: text beside a screenshot, swapping sides each row; stacked on narrow screens. */
+.landing-features {
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+}
+
+.landing-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 3.5rem;
+  align-items: center;
+}
+
+.landing-feature:nth-child(even) .landing-feature-text {
+  order: 2;
+}
+
+.landing-feature-text h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.landing-feature-text > p.muted {
+  margin: 0 0 1.25rem;
+  font-size: 1.05rem;
+}
+
+.landing-feature-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--primary);
+}
+
+.landing-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.landing-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.landing-points svg {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  color: var(--low);
+}
+
+@media (max-width: 900px) {
+  .landing-feature {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .landing-feature:nth-child(even) .landing-feature-text {
+    order: 0;
+  }
+}
+
+.landing-extras {
+  list-style: none;
+  margin: 5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.landing-extras li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+}
+
+.landing-extras p {
+  margin: 0;
+  font-size: 0.925rem;
+}
+
+.landing-extra-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+@media (max-width: 900px) {
+  .landing-extras {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .landing-extras {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.landing-steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.landing-steps li {
+  counter-increment: step;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.landing-steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.6rem;
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--primary-text);
+  background: var(--primary);
+}
+
+.landing-steps p {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .landing-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+}
+
+/* The closing call to action: a band in the brand colour. */
+.landing-final {
+  padding: 3.5rem 2rem;
+  border-radius: 20px;
+  text-align: center;
+  color: var(--primary-text);
+  background: var(--primary);
+}
+
+.landing-final h2 {
+  font-size: clamp(1.6rem, 3.4vw, 2.25rem);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.landing-final p {
+  max-width: 30rem;
+  margin: 0 auto 2rem;
+  font-size: 1.05rem;
+  opacity: 0.9;
+}
+
+.landing-final-primary {
+  color: var(--primary);
+  background: var(--primary-text);
+}
+
+.landing-final-primary:hover {
+  background: color-mix(in srgb, var(--primary-text) 88%, var(--primary));
+}
+
+.landing-final-ghost {
+  color: var(--primary-text);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--primary-text) 55%, transparent);
+}
+
+.landing-final-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-text) 12%, transparent);
+}
+
+.landing-final .demo-error {
+  margin-top: 0.25rem;
+}
+
+.landing-footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+.landing-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+
+.landing-footer .brand {
+  font-size: 1rem;
+}
+
+.landing-footer .brand-mark {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 6px;
+}
+
+.landing-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .landing-container {
+    padding: 0 1rem;
+  }
+
+  .landing-nav {
+    display: none;
+  }
+
+  .landing-hero {
+    padding: 3rem 0 2.5rem;
+  }
+
+  .landing-lede {
+    font-size: 1.05rem;
+  }
+
+  .landing-cta .btn {
+    width: 100%;
+  }
+
+  .landing-hero-shot {
+    margin-top: 2.5rem;
+  }
+
+  .landing-section {
+    padding: 3.5rem 0;
+  }
+
+  .landing-section-head {
+    margin-bottom: 2.5rem;
+  }
+
+  .landing-features {
+    gap: 3.5rem;
+  }
+
+  .landing-extras {
+    margin-top: 3.5rem;
+  }
+
+  .landing-final {
+    padding: 2.5rem 1.25rem;
+  }
+
+  .landing-footer-links {
+    margin-left: 0;
   }
 }

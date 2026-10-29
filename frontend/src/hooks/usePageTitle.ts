@@ -10,9 +10,10 @@ function apply() {
   document.title = override ?? pageTitle;
 }
 
-export function usePageTitle(title: string) {
+/** `null` for the bare "StudyFlow" (the front page). */
+export function usePageTitle(title: string | null) {
   useEffect(() => {
-    pageTitle = `${title} · StudyFlow`;
+    pageTitle = title === null ? "StudyFlow" : `${title} · StudyFlow`;
     apply();
   }, [title]);
 }
