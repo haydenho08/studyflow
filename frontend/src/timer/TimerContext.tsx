@@ -10,6 +10,7 @@ import {
 
 import { useCreateSession } from "../api/queries";
 import { useAuth } from "../auth/AuthContext";
+import { setTitleOverride } from "../hooks/usePageTitle";
 import type { StudySessionCreate } from "../api/types";
 import { playChime, unlockAudio } from "../lib/chime";
 import {
@@ -120,15 +121,13 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   // Show the countdown in the browser tab, so it's visible from other tabs.
   useEffect(() => {
     if (timer.phase === "idle") {
-      document.title = "StudyFlow";
+      setTitleOverride(null); // back to the page's own title
       return;
     }
     const label = timer.phase === "focus" ? "Focus" : "Break";
-    document.title = `${formatClock(remainingMs(timer, now))} · ${label} · StudyFlow`;
+    setTitleOverride(`${formatClock(remainingMs(timer, now))} · ${label} · StudyFlow`);
     // Undo on unmount (e.g. logging out), or the countdown would stay frozen in the tab title.
-    return () => {
-      document.title = "StudyFlow";
-    };
+    return () => setTitleOverride(null);
   }, [timer, now]);
 
   const start = useCallback(

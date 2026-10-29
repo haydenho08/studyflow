@@ -1,11 +1,14 @@
+import { BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { useCourses, useWeekStats } from "../api/queries";
 import type { Course, WeekStats } from "../api/types";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { EmptyState, SkeletonList } from "../components/Feedback";
 import { WeekChart } from "../components/WeekChart";
 import { useDisplayColor } from "../hooks/useDisplayColor";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { addDays, browserTimeZone, formatDuration, formatWeekRange, mondayOf, parseLocalDate } from "../lib/week";
 
 const shortDay = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric" });
@@ -90,6 +93,7 @@ function StatsTable({ stats, courses }: { stats: WeekStats; courses: Course[] })
 }
 
 export function StatsPage() {
+  usePageTitle("Stats");
   const [searchParams, setSearchParams] = useSearchParams();
   const thisWeek = mondayOf(new Date());
   const requested = searchParams.get("week");
@@ -120,7 +124,7 @@ export function StatsPage() {
         <h1>Stats</h1>
         <div className="week-nav" role="group" aria-label="Choose week">
           <button type="button" className="btn btn-ghost" onClick={() => goTo(addDays(week, -7))} aria-label="Previous week">
-            ←
+            <ChevronLeft size={18} aria-hidden="true" />
           </button>
           <span className="week-label">{formatWeekRange(week)}</span>
           <button
@@ -130,7 +134,7 @@ export function StatsPage() {
             disabled={week >= thisWeek}
             aria-label="Next week"
           >
-            →
+            <ChevronRight size={18} aria-hidden="true" />
           </button>
           {week !== thisWeek && (
             <button type="button" className="btn btn-ghost" onClick={() => goTo(thisWeek)}>
@@ -141,14 +145,21 @@ export function StatsPage() {
       </div>
 
       {stats.isPending || courses.isPending ? (
-        <p className="muted">Loading…</p>
+        <SkeletonList rows={2} height={160} />
       ) : stats.isError ? (
         <ErrorMessage error={stats.error} />
       ) : data && data.total_seconds === 0 ? (
-        <p className="empty">
-          No study logged {week === thisWeek ? "this week yet" : "this week"}.{" "}
-          {week === thisWeek && <Link to="/study">Start a focus session</Link>}
-        </p>
+        <EmptyState
+          icon={<BarChart3 size={28} />}
+          title={week === thisWeek ? "No study logged this week yet" : "No study logged this week"}
+          action={
+            week === thisWeek && (
+              <Link to="/study" className="btn btn-primary">
+                Start a focus session
+              </Link>
+            )
+          }
+        />
       ) : data ? (
         <div className={`page-section${stats.isPlaceholderData ? " is-stale" : ""}`}>
           <div className="stat-tiles">

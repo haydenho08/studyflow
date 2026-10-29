@@ -1,11 +1,15 @@
+import { BookOpen, Timer, Trash2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 
 import { useCourses, useCreateSession, useDeleteSession, useStudySessions } from "../api/queries";
 import type { Course } from "../api/types";
+import { useConfirm } from "../components/ConfirmDialog";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { EmptyState, SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
 import { useDisplayColor } from "../hooks/useDisplayColor";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { formatDue, fromDateTimeInput, localDayStart, toDateTimeInput } from "../lib/dates";
 import {
   MIN_SESSION_MS,
@@ -209,9 +213,10 @@ function ThisWeek({ courses }: { courses: Course[] }) {
   const weekStart = mondayOf(new Date());
   const sessions = useStudySessions({ started_from: localDayStart(weekStart) });
   const deleteSession = useDeleteSession();
+  const confirm = useConfirm();
   const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
 
-  if (sessions.isPending) return <p className="muted">Loading…</p>;
+  if (sessions.isPending) return <SkeletonList rows={3} height={56} />;
   if (sessions.isError) return <ErrorMessage error={sessions.error} />;
 
   const total = sessions.data.reduce((sum, s) => sum + s.duration_seconds, 0);
@@ -226,29 +231,43 @@ function ThisWeek({ courses }: { courses: Course[] }) {
         </span>
       </div>
       {sessions.data.length === 0 ? (
-        <p className="empty">No study logged this week yet. Start a focus session above.</p>
+        <EmptyState icon={<Timer size={28} />} title="No study logged this week">
+          Start a focus session above, or log one you forgot to time.
+        </EmptyState>
       ) : (
         <ul className="list">
           {sessions.data.map((s) => {
             const course = courseById.get(s.course_id);
             return (
-              <li key={s.id} className="card session-item">
+              <li key={s.id} className="card row-item is-compact">
                 <Swatch color={course?.color} />
-                <span className="course-code">{course?.code}</span>
-                <time className="grow muted" dateTime={s.started_at}>
-                  {formatDue(s.started_at)}
-                </time>
-                <span className="session-duration">{formatDuration(s.duration_seconds)}</span>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  disabled={deleteSession.isPending}
-                  onClick={() => {
-                    if (window.confirm("Delete this study session?")) deleteSession.mutate(s.id);
-                  }}
-                >
-                  Delete
-                </button>
+                <div className="row-main">
+                  <div className="row-title">{course?.code}</div>
+                  <time className="muted row-meta" dateTime={s.started_at}>
+                    {formatDue(s.started_at)}
+                  </time>
+                </div>
+                <div className="row-actions">
+                  <span className="session-duration">{formatDuration(s.duration_seconds)}</span>
+                  <button
+                    type="button"
+                    className="icon-btn is-danger"
+                    disabled={deleteSession.isPending}
+                    aria-label={`Delete the ${course?.code ?? ""} session from ${formatDue(s.started_at)}`}
+                    title="Delete"
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Delete this study session?",
+                        message: `${formatDuration(s.duration_seconds)} of ${course?.code ?? "study"} on ${formatDue(s.started_at)}.`,
+                        confirmLabel: "Delete",
+                        danger: true,
+                      });
+                      if (ok) deleteSession.mutate(s.id);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </li>
             );
           })}
@@ -260,18 +279,29 @@ function ThisWeek({ courses }: { courses: Course[] }) {
 }
 
 export function StudyPage() {
+  usePageTitle("Study");
   const courses = useCourses();
 
-  if (courses.isPending) return <p className="muted">Loading…</p>;
+  if (courses.isPending) return <SkeletonList rows={2} height={180} />;
   if (courses.isError) return <ErrorMessage error={courses.error} />;
 
   return (
     <section className="page">
-      <h1>Study</h1>
+      <div className="page-header">
+        <h1>Study</h1>
+      </div>
       {courses.data.length === 0 ? (
-        <p className="empty">
-          Add a course first: study time is tracked per course. <Link to="/courses">Go to Courses</Link>
-        </p>
+        <EmptyState
+          icon={<BookOpen size={28} />}
+          title="Add a course first"
+          action={
+            <Link to="/courses" className="btn btn-primary">
+              Go to Courses
+            </Link>
+          }
+        >
+          Study time is tracked per course.
+        </EmptyState>
       ) : (
         <>
           <TimerCard courses={courses.data} />

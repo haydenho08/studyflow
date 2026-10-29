@@ -1,9 +1,12 @@
+import { ArrowRight, BarChart3, CalendarDays, ExternalLink, Timer } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation } from "react-router";
 
 import { ApiError } from "../api/client";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { BrandMark } from "../components/Feedback";
 import { useAuth } from "../auth/AuthContext";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const MAX_PASSWORD_BYTES = 72; // bcrypt's limit, enforced by the API too
 const SOURCE_URL = "https://github.com/haydenho08/studyflow";
@@ -32,13 +35,22 @@ function Pitch() {
   return (
     <section className="pitch" aria-labelledby="pitch-title">
       <h1 id="pitch-title" className="brand">
+        <BrandMark size={20} />
         StudyFlow
       </h1>
       <p className="pitch-tagline">Your courses, deadlines and study time, in one place.</p>
       <ul className="pitch-features">
-        <li>A week calendar of every deadline, with overdue work flagged</li>
-        <li>A Pomodoro timer that logs focused time per course</li>
-        <li>Weekly stats: where your study hours actually went</li>
+        <li>
+          <CalendarDays size={18} aria-hidden="true" />A week calendar of every deadline, with
+          overdue work flagged
+        </li>
+        <li>
+          <Timer size={18} aria-hidden="true" />A Pomodoro timer that logs focused time per course
+        </li>
+        <li>
+          <BarChart3 size={18} aria-hidden="true" />
+          Weekly stats: where your study hours actually went
+        </li>
       </ul>
       <button
         type="button"
@@ -47,6 +59,7 @@ function Pitch() {
         disabled={pending}
       >
         {pending ? "Opening the demo…" : "Explore the demo"}
+        {!pending && <ArrowRight size={18} aria-hidden="true" />}
       </button>
       <p className="muted pitch-note">
         No sign-up: a sample student account with this week's data.
@@ -59,6 +72,7 @@ function Pitch() {
       <p className="pitch-source">
         <a href={SOURCE_URL} target="_blank" rel="noreferrer">
           View the source on GitHub
+          <ExternalLink size={14} aria-hidden="true" />
         </a>
       </p>
     </section>
@@ -67,6 +81,7 @@ function Pitch() {
 
 /** Login and register are the same form with a different submit action. */
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
+  usePageTitle(mode === "register" ? "Create an account" : "Log in");
   const { isAuthenticated, login, register } = useAuth();
   const location = useLocation();
   const [email, setEmail] = useState("");

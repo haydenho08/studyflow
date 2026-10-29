@@ -1,8 +1,18 @@
+import { BarChart3, BookOpen, CalendarDays, ListChecks, LogOut, Timer } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
 
 import { useAuth } from "../auth/AuthContext";
 import { formatClock, remainingMs } from "../lib/pomodoro";
 import { useTimer } from "../timer/TimerContext";
+import { BrandMark } from "./Feedback";
+
+const NAV = [
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/assignments", label: "Assignments", icon: ListChecks },
+  { to: "/courses", label: "Courses", icon: BookOpen },
+  { to: "/study", label: "Study", icon: Timer },
+  { to: "/stats", label: "Stats", icon: BarChart3 },
+];
 
 /** While a Pomodoro runs, a small countdown in the top bar, visible from every page. */
 function TimerPill() {
@@ -23,20 +33,24 @@ export function Layout() {
     <div className="app">
       <header className="topbar">
         <Link to="/" className="brand">
+          <BrandMark />
           StudyFlow
         </Link>
-        <nav className="nav">
-          <NavLink to="/calendar">Calendar</NavLink>
-          <NavLink to="/assignments">Assignments</NavLink>
-          <NavLink to="/courses">Courses</NavLink>
-          <NavLink to="/study">Study</NavLink>
-          <NavLink to="/stats">Stats</NavLink>
+        {/* A top bar on desktop; a fixed bottom tab bar on phones (see styles.css). */}
+        <nav className="nav" aria-label="Main">
+          {NAV.map(({ to, label, icon: Icon }) => (
+            <NavLink key={to} to={to}>
+              <Icon size={18} aria-hidden="true" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
         </nav>
         <div className="account">
           <TimerPill />
           <span className="muted account-email">{user?.email}</span>
-          <button type="button" className="btn btn-ghost" onClick={logout}>
-            Log out
+          <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
+            <LogOut size={16} aria-hidden="true" />
+            <span className="logout-label">Log out</span>
           </button>
         </div>
       </header>

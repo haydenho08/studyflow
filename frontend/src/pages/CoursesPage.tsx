@@ -1,9 +1,14 @@
+import { BookOpen, Pencil, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { useCourses, useCreateCourse, useDeleteCourse, useUpdateCourse } from "../api/queries";
 import type { Course } from "../api/types";
+import { ColorPicker } from "../components/ColorPicker";
+import { useConfirm } from "../components/ConfirmDialog";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { EmptyState, SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { COURSE_PALETTE_LIGHT, nextCourseColor } from "../lib/colors";
 import { changedFields, isEmpty } from "../lib/diff";
 
@@ -49,7 +54,7 @@ function CourseForm({
         <span>Code</span>
         <input required maxLength={20} placeholder="EECS 1012" value={values.code} onChange={set("code")} />
       </label>
-      <label className="field grow">
+      <label className="field">
         <span>Name</span>
         <input
           required
@@ -59,10 +64,7 @@ function CourseForm({
           onChange={set("name")}
         />
       </label>
-      <label className="field">
-        <span>Colour</span>
-        <input type="color" value={values.color} onChange={set("color")} />
-      </label>
+      <ColorPicker value={values.color} onChange={(color) => setValues((v) => ({ ...v, color }))} />
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={pending}>
           {submitLabel}
@@ -82,6 +84,7 @@ function CourseItem({ course }: { course: Course }) {
   const [editing, setEditing] = useState(false);
   const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
+  const confirm = useConfirm();
   const current: CourseFormValues = { name: course.name, code: course.code, color: course.color };
 
   if (editing) {
@@ -101,41 +104,59 @@ function CourseItem({ course }: { course: Course }) {
     );
   }
 
-  function handleDelete() {
-    const ok = window.confirm(`Delete ${course.code}? This also deletes all of its assignments.`);
+  async function handleDelete() {
+    const ok = await confirm({
+      title: `Delete ${course.code}?`,
+      message: "This also deletes its assignments and logged study time. It can't be undone.",
+      confirmLabel: "Delete course",
+      danger: true,
+    });
     if (ok) deleteCourse.mutate(course.id);
   }
 
   return (
-    <li className="card course-item">
+    <li className="card row-item is-compact">
       <Swatch color={course.color} />
-      <div className="grow">
-        <div className="course-code">{course.code}</div>
-        <div className="muted">{course.name}</div>
+      <div className="row-main">
+        <div className="row-title">{course.code}</div>
+        <div className="muted row-meta">{course.name}</div>
       </div>
-      <button type="button" className="btn btn-ghost" onClick={() => setEditing(true)}>
-        Edit
-      </button>
-      <button
-        type="button"
-        className="btn btn-danger"
-        onClick={handleDelete}
-        disabled={deleteCourse.isPending}
-      >
-        Delete
-      </button>
+      <div className="row-actions">
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => setEditing(true)}
+          aria-label={`Edit ${course.code}`}
+          title="Edit"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn is-danger"
+          onClick={handleDelete}
+          disabled={deleteCourse.isPending}
+          aria-label={`Delete ${course.code}`}
+          title="Delete"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
       <ErrorMessage error={deleteCourse.error} />
     </li>
   );
 }
 
 export function CoursesPage() {
+  usePageTitle("Courses");
   const courses = useCourses();
   const createCourse = useCreateCourse();
 
   return (
     <section className="page">
-      <h1>Courses</h1>
+      <div className="page-header">
+        <h1>Courses</h1>
+      </div>
 
       <div className="card">
         <h2>Add a course</h2>
@@ -149,11 +170,13 @@ export function CoursesPage() {
       </div>
 
       {courses.isPending ? (
-        <p className="muted">Loading…</p>
+        <SkeletonList rows={3} />
       ) : courses.isError ? (
         <ErrorMessage error={courses.error} />
       ) : courses.data.length === 0 ? (
-        <p className="empty">No courses yet. Add your first one above.</p>
+        <EmptyState icon={<BookOpen size={28} />} title="No courses yet">
+          Add the courses you're taking this term. Assignments and study time are tracked per course.
+        </EmptyState>
       ) : (
         <ul className="list">
           {courses.data.map((course) => (

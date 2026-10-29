@@ -1,10 +1,13 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { useAssignments, useCourses, useUpdateAssignment } from "../api/queries";
 import type { Assignment, Course } from "../api/types";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { groupByLocalDay, isOverdue, openCount, weekDays } from "../lib/calendar";
 import { formatDue, localDayStart } from "../lib/dates";
 import { KIND_LABELS, PRIORITY_LABELS } from "../lib/labels";
@@ -72,6 +75,7 @@ function DeadlineCard({
 }
 
 export function CalendarPage() {
+  usePageTitle("Calendar");
   const [searchParams, setSearchParams] = useSearchParams();
   const now = new Date();
   const today = toLocalDateString(now);
@@ -102,11 +106,11 @@ export function CalendarPage() {
         <h1>Calendar</h1>
         <div className="week-nav" role="group" aria-label="Choose week">
           <button type="button" className="btn btn-ghost" onClick={() => goTo(addDays(week, -7))} aria-label="Previous week">
-            ←
+            <ChevronLeft size={18} aria-hidden="true" />
           </button>
           <span className="week-label">{formatWeekRange(week)}</span>
           <button type="button" className="btn btn-ghost" onClick={() => goTo(addDays(week, 7))} aria-label="Next week">
-            →
+            <ChevronRight size={18} aria-hidden="true" />
           </button>
           {week !== thisWeek && (
             <button type="button" className="btn btn-ghost" onClick={() => goTo(thisWeek)}>
@@ -130,7 +134,7 @@ export function CalendarPage() {
       )}
 
       {deadlines.isPending ? (
-        <p className="muted">Loading…</p>
+        <SkeletonList rows={1} height={300} />
       ) : deadlines.isError ? (
         <ErrorMessage error={deadlines.error} />
       ) : (

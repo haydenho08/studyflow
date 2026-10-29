@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router";
 import { ApiError } from "./api/client";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthContext";
+import { ConfirmProvider } from "./components/ConfirmDialog";
 import "./styles.css";
 
 const queryClient = new QueryClient({
@@ -27,7 +28,9 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

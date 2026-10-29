@@ -1,3 +1,4 @@
+import { BookOpen, ListChecks, Pencil, Plus, SearchX, Trash2, X } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 
@@ -9,7 +10,9 @@ import {
   useUpdateAssignment,
 } from "../api/queries";
 import type { Assignment, AssignmentKind, Course, Priority, Status } from "../api/types";
+import { useConfirm } from "../components/ConfirmDialog";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { EmptyState, SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
 import {
   defaultDueInput,
@@ -20,6 +23,7 @@ import {
 } from "../lib/dates";
 import { changedFields, isEmpty } from "../lib/diff";
 import { readFilterParams, toApiFilters } from "../lib/filters";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { KIND_LABELS, PRIORITY_LABELS, STATUS_LABELS, optionsOf } from "../lib/labels";
 
 // --- form -------------------------------------------------------------------------------------
@@ -172,6 +176,7 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
   const [editing, setEditing] = useState(false);
   const updateAssignment = useUpdateAssignment();
   const deleteAssignment = useDeleteAssignment();
+  const confirm = useConfirm();
 
   if (editing) {
     const initial = formValuesFrom(assignment);
@@ -198,53 +203,70 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
   const done = assignment.status === "done";
   const overdue = !done && new Date(assignment.due_at) < new Date();
 
-  function handleDelete() {
-    if (window.confirm(`Delete "${assignment.title}"?`)) deleteAssignment.mutate(assignment.id);
+  async function handleDelete() {
+    const ok = await confirm({
+      title: `Delete "${assignment.title}"?`,
+      message: "This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (ok) deleteAssignment.mutate(assignment.id);
   }
 
   return (
-    <li className={`card assignment-item${done ? " is-done" : ""}${overdue ? " is-overdue" : ""}`}>
+    <li className={`card row-item${done ? " is-done" : ""}${overdue ? " is-overdue" : ""}`}>
       <Swatch color={course?.color} />
-      <div className="grow">
-        <div className="assignment-title">{assignment.title}</div>
-        <div className="muted meta">
+      <div className="row-main">
+        <div className="row-title">{assignment.title}</div>
+        <div className="muted row-meta">
           <span>{course?.code}</span>
           <span>{KIND_LABELS[assignment.kind]}</span>
           <time dateTime={assignment.due_at}>
-            {formatDue(assignment.due_at)} · {overdue ? "overdue, " : ""}
-            {formatRelative(assignment.due_at)}
+            {formatDue(assignment.due_at)} ({overdue ? "overdue, " : ""}
+            {formatRelative(assignment.due_at)})
           </time>
         </div>
         {assignment.description && <p className="description">{assignment.description}</p>}
       </div>
-      <span className={`badge priority-${assignment.priority}`}>
-        {PRIORITY_LABELS[assignment.priority]}
-      </span>
-      <select
-        aria-label={`Status of ${assignment.title}`}
-        value={assignment.status}
-        disabled={updateAssignment.isPending}
-        onChange={(e) =>
-          updateAssignment.mutate({ id: assignment.id, changes: { status: e.target.value as Status } })
-        }
-      >
-        {optionsOf(STATUS_LABELS).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
-      <button type="button" className="btn btn-ghost" onClick={() => setEditing(true)}>
-        Edit
-      </button>
-      <button
-        type="button"
-        className="btn btn-danger"
-        onClick={handleDelete}
-        disabled={deleteAssignment.isPending}
-      >
-        Delete
-      </button>
+      <div className="row-actions">
+        <span className={`badge priority-${assignment.priority}`}>
+          {PRIORITY_LABELS[assignment.priority]}
+        </span>
+        <select
+          className={`status-select status-${assignment.status}`}
+          aria-label={`Status of ${assignment.title}`}
+          value={assignment.status}
+          disabled={updateAssignment.isPending}
+          onChange={(e) =>
+            updateAssignment.mutate({ id: assignment.id, changes: { status: e.target.value as Status } })
+          }
+        >
+          {optionsOf(STATUS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => setEditing(true)}
+          aria-label={`Edit ${assignment.title}`}
+          title="Edit"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          type="button"
+          className="icon-btn is-danger"
+          onClick={handleDelete}
+          disabled={deleteAssignment.isPending}
+          aria-label={`Delete ${assignment.title}`}
+          title="Delete"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
       <ErrorMessage error={updateAssignment.error ?? deleteAssignment.error} />
     </li>
   );
@@ -253,6 +275,7 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
 // --- page -------------------------------------------------------------------------------------
 
 export function AssignmentsPage() {
+  usePageTitle("Assignments");
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParams = readFilterParams(searchParams);
   const apiFilters = toApiFilters(filterParams);
@@ -286,15 +309,24 @@ export function AssignmentsPage() {
         <h1>Assignments</h1>
         {firstCourse && !adding && (
           <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
+            <Plus size={18} aria-hidden="true" />
             New assignment
           </button>
         )}
       </div>
 
       {courses.isSuccess && courseList.length === 0 && (
-        <p className="empty">
-          Add a course first: assignments belong to a course. <Link to="/courses">Go to Courses</Link>
-        </p>
+        <EmptyState
+          icon={<BookOpen size={28} />}
+          title="Add a course first"
+          action={
+            <Link to="/courses" className="btn btn-primary">
+              Go to Courses
+            </Link>
+          }
+        >
+          Every assignment belongs to a course.
+        </EmptyState>
       )}
 
       {adding && firstCourse && (
@@ -320,7 +352,7 @@ export function AssignmentsPage() {
         </div>
       )}
 
-      <div className="filters" role="search">
+      <div className="toolbar" role="search" aria-label="Filter assignments">
         <label className="field">
           <span>Course</span>
           <select value={filterParams.course ?? ""} onChange={(e) => setFilter("course", e.target.value)}>
@@ -366,18 +398,31 @@ export function AssignmentsPage() {
           <input type="date" value={filterParams.to ?? ""} onChange={(e) => setFilter("to", e.target.value)} />
         </label>
         {hasFilters && (
-          <button type="button" className="btn btn-ghost" onClick={() => setSearchParams({}, { replace: true })}>
-            Clear filters
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setSearchParams({}, { replace: true })}
+          >
+            <X size={16} aria-hidden="true" />
+            Clear
           </button>
         )}
       </div>
 
       {assignments.isPending ? (
-        <p className="muted">Loading…</p>
+        <SkeletonList rows={5} />
       ) : assignments.isError ? (
         <ErrorMessage error={assignments.error} />
       ) : assignments.data.length === 0 ? (
-        <p className="empty">{hasFilters ? "Nothing matches these filters." : "No assignments yet."}</p>
+        hasFilters ? (
+          <EmptyState icon={<SearchX size={28} />} title="Nothing matches these filters">
+            Try a different course, status or date range.
+          </EmptyState>
+        ) : (
+          <EmptyState icon={<ListChecks size={28} />} title="No assignments yet">
+            {courseList.length > 0 && "Add your first one with New assignment."}
+          </EmptyState>
+        )
       ) : (
         <ul className={`list${assignments.isPlaceholderData ? " is-stale" : ""}`}>
           {assignments.data.map((a) => (
