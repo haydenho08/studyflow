@@ -48,7 +48,8 @@ export function Layout() {
         <div className="account">
           <TimerPill />
           <span className="muted account-email">{user?.email}</span>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
+          {/* aria-label: on phones the text is hidden, and the icon alone has no name. */}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={logout} aria-label="Log out">
             <LogOut size={16} aria-hidden="true" />
             <span className="logout-label">Log out</span>
           </button>

@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Unit tests only; e2e/ is Playwright's (npm run test:e2e).
+    include: ["src/**/*.test.ts"],
     // Pin a timezone with a DST change so date tests behave the same on every machine and in CI.
     env: { TZ: "America/Toronto" },
   },

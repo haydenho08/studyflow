@@ -19,8 +19,8 @@ export default tseslint.config(
     },
   },
   {
-    // Node scripts (screenshots). Callbacks passed to Playwright run in the page, hence browser too.
-    files: ["scripts/**/*.mjs"],
+    // Node code (screenshot script, end-to-end tests). Callbacks passed to Playwright run in the page, hence browser too.
+    files: ["scripts/**/*.mjs", "e2e/**/*.ts", "playwright.config.ts"],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
 );

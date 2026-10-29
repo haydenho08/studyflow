@@ -13,3 +13,6 @@ backend/tests
 frontend/node_modules
 frontend/dist
 frontend/scripts
+frontend/e2e
+frontend/test-results
+frontend/playwright-report

@@ -18,6 +18,9 @@ htmlcov/
 # Node (frontend, Stage 2)
 node_modules/
 dist/
+# Playwright end-to-end output
+test-results/
+playwright-report/
 
 # Editors / OS
 .vscode/

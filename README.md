@@ -7,7 +7,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 **[Live demo → studyflow-q3u0.onrender.com](https://studyflow-q3u0.onrender.com)** · the front page tours the features; click **Explore the demo** for a sample student account with this week's data (no sign-up), or register your own.
 <sub>Free hosting: the first visit after a quiet spell can take ~30–60 s while the server wakes up.</sub>
 
-**FastAPI · PostgreSQL · SQLAlchemy 2.0 · Alembic · React 19 · TypeScript · TanStack Query · Vite · pytest · Vitest · Docker · GitHub Actions**
+**FastAPI · PostgreSQL · SQLAlchemy 2.0 · Alembic · React 19 · TypeScript · TanStack Query · Vite · pytest · Vitest · Playwright · Docker · GitHub Actions**
 
 ![Calendar week view with an overdue panel, deadlines by day, exams highlighted](docs/screenshots/calendar.png)
 
@@ -25,6 +25,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 - **Courses and assignments:** assignments, quizzes, exams, labs and projects with due dates, priority and status; filters by course, status, priority and date range, all kept in the URL.
 - **Calendar week view:** deadlines placed on the right *local* day (including across daylight-saving changes), an overdue panel, and one-click "done".
 - **Pomodoro timer:** 25/5 or 50/10 focus blocks that survive refreshes, sleep, background tabs and an expired login, and log each completed block to its course.
+- **Calendar feed:** subscribe from Google, Apple or Outlook calendar with a secret link, and every deadline shows up there and stays up to date. The link can be replaced or turned off at any time.
 - **Weekly stats:** totals, daily average, best day, and a stacked chart per day and course, bucketed in *your* time zone, with a table view.
 - **Front page and polish:** a public landing page with scroll-in sections; pages, lists and charts animate in, and all motion switches off when the system asks for reduced motion.
 
@@ -38,6 +39,8 @@ Each stage has a written walkthrough of the design decisions in [`docs/`](docs/)
 - **Aggregation in SQL.** Weekly stats are a `GROUP BY` over the user's local day (`timezone(tz, started_at)::date`), not a Python loop over rows. Overlapping study sessions are rejected with the interval-overlap rule. ([Stage 3](docs/stage-3.md))
 - **A timer that can't drift.** It stores *when it started* and derives the remaining time, so it's correct through background-tab throttling and sleep. Transitions are idempotent, so StrictMode, two tabs or a retry can't log a block twice. ([Stage 3](docs/stage-3.md))
 - **Accessible charts.** Hand-built SVG with a colour-blind-validated palette (separate dark-mode steps), legend, keyboard-focusable tooltips, and a table view. Colour is never the only cue. ([Stage 3](docs/stage-3.md))
+- **A calendar feed secured by its URL.** Calendar apps can't log in, so the feed URL carries a 256-bit random token that can be replaced or switched off at any time, and is separate from the login token. Unknown tokens get a 404. The iCalendar output (escaping, CRLF, folding long lines at 75 *bytes*) is hand-written and unit-tested. ([Stage 6](docs/stage-6.md))
+- **Tested in a real browser.** Playwright runs 12 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed), two of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
 - **Database integrity, not just app checks:** foreign keys with `ON DELETE CASCADE`, `CHECK` constraints for enums and session times, and reversible Alembic migrations tested both ways in CI.
 
 ## Architecture
@@ -56,9 +59,10 @@ In development, Vite proxies `/api` to FastAPI, so the browser sees a single ori
 
 | | |
 |---|---|
-| **Backend** | 108 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend |
-| **Frontend** | 60 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection |
-| **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, both test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
+| **Backend** | 141 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed |
+| **Frontend** | 63 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection |
+| **End-to-end** | 12 Playwright tests in a real browser (two also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle |
+| **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, all three test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
 
 ## Running locally
 
@@ -84,13 +88,13 @@ npm install
 npm run dev
 ```
 
-Tests: `pytest` in `backend/`; `npm test`, `npm run lint` and `npm run build` in `frontend/`. Screenshots are regenerated with `npm run screenshots` (Playwright, using the installed Edge).
+Tests: `pytest` in `backend/`; `npm test`, `npm run lint` and `npm run build` in `frontend/`. `npm run test:e2e` builds the frontend, starts the API on port 8100 serving it, and runs the Playwright tests (locally in the installed Edge; set `PYTHON` if your virtualenv isn't `backend/.venv`). Screenshots are regenerated with `npm run screenshots` (Playwright, using the installed Edge).
 
 ## Project structure
 
 ```
 backend/   FastAPI app (models, schemas, routers, ownership checks), Alembic migrations, pytest suite, scripts
-frontend/  React + TypeScript SPA (pages, typed API client + query hooks, pure logic in lib/ with unit tests)
+frontend/  React + TypeScript SPA (pages, typed API client + query hooks, pure logic in lib/ with unit tests), e2e/ Playwright tests
 docs/      Stage-by-stage design walkthroughs and screenshots
 ```
 
@@ -100,9 +104,9 @@ One multi-stage Docker image (FastAPI serving the API *and* the built React app)
 
 ## Roadmap
 
-- Playwright end-to-end tests in CI
-- `.ics` calendar feed (per-user secret URL) for Google/Apple Calendar
 - Refresh tokens / httpOnly cookie auth
+- Email reminders the day before a deadline
+- Recurring assignments (a weekly lab)
 
 ## License
 
