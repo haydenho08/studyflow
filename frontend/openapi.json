@@ -986,6 +986,113 @@
           }
         }
       }
+    },
+    "/api/calendar-feed": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Read Feed",
+        "operationId": "read_feed_api_calendar_feed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarFeed"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Create Feed",
+        "description": "Turn the feed on, or replace its URL with a new one: the old URL stops working at once.",
+        "operationId": "create_feed_api_calendar_feed_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarFeed"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Delete Feed",
+        "operationId": "delete_feed_api_calendar_feed_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/calendar/{token}.ics": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Calendar Feed",
+        "description": "The user's deadlines as iCalendar, for Google, Apple or Outlook calendar to subscribe to.\n\nNo login: calendar apps can't send one, so the secret in the URL is the credential. An\nunknown, replaced or switched-off token gets a 404, like a feed that never existed.",
+        "operationId": "calendar_feed_api_calendar__token__ics_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An iCalendar feed",
+            "content": {
+              "text/calendar": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1260,6 +1367,27 @@
           "password"
         ],
         "title": "Body_login_api_auth_login_post"
+      },
+      "CalendarFeed": {
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "The feed's path on this site (/api/calendar/<secret>.ics), or null while off."
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "CalendarFeed"
       },
       "CourseCreate": {
         "properties": {

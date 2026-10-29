@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router";
 
 import { useAssignments, useCourses, useUpdateAssignment } from "../api/queries";
 import type { Assignment, Course } from "../api/types";
+import { CalendarFeedButton } from "../components/CalendarFeedButton";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
@@ -139,11 +140,14 @@ export function CalendarPage() {
         <ErrorMessage error={deadlines.error} />
       ) : (
         <>
-          <p className="muted week-summary">
-            {weekTotal === 0
-              ? "No deadlines this week."
-              : `${weekTotal} ${weekTotal === 1 ? "deadline" : "deadlines"} this week · ${weekDone} done`}
-          </p>
+          <div className="week-toolbar">
+            <p className="muted week-summary">
+              {weekTotal === 0
+                ? "No deadlines this week."
+                : `${weekTotal} ${weekTotal === 1 ? "deadline" : "deadlines"} this week · ${weekDone} done`}
+            </p>
+            <CalendarFeedButton />
+          </div>
           <ol className={`week-grid${deadlines.isPlaceholderData ? " is-stale" : ""}`}>
             {days.map((day) => {
               const items = byDay.get(day) ?? [];

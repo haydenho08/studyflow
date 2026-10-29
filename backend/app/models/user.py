@@ -17,6 +17,9 @@ class User(TimestampMixin, Base):
     # case-insensitive in practice.
     email: Mapped[str] = mapped_column(String(320), unique=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
+    # Secret for the read-only calendar feed (/api/calendar/<token>.ics); None while it's off.
+    # Calendar apps can't send a login header, so the URL itself is the credential.
+    calendar_token: Mapped[str | None] = mapped_column(String(64), unique=True)
 
     # passive_deletes: let the database's ON DELETE CASCADE remove children instead of the ORM.
     courses: Mapped[list["Course"]] = relationship(

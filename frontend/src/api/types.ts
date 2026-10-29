@@ -23,6 +23,8 @@ export type StudySessionCreate = Schemas["StudySessionCreate"];
 export type WeekStats = Schemas["WeekStats"];
 export type DayStats = Schemas["DayStats"];
 
+export type CalendarFeed = Schemas["CalendarFeed"];
+
 // Query-string types are generated too (from each endpoint's parameters), so a new or renamed
 // filter on the backend shows up here without hand-editing.
 type QueryOf<Operation extends keyof operations> = NonNullable<operations[Operation]["parameters"]["query"]>;

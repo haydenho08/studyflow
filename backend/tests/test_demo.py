@@ -75,6 +75,18 @@ def test_stale_demo_is_rebuilt_and_visitor_changes_are_cleared(client, demo_on, 
     assert set(rebuilt).isdisjoint(original)  # brand-new rows
 
 
+def test_rebuilding_the_demo_switches_off_its_calendar_feed(client, demo_on, db):
+    headers = demo_headers(client)
+    path = client.post("/api/calendar-feed", headers=headers).json()["path"]
+    assert client.get(path).status_code == 200
+
+    db.execute(text("UPDATE courses SET created_at = created_at - interval '2 hours'"))
+    db.commit()
+    demo_headers(client)
+
+    assert client.get(path).status_code == 404
+
+
 def test_demo_rebuilds_if_a_visitor_deleted_every_course(client, demo_on):
     headers = demo_headers(client)
     for cid in course_ids(client, headers):

@@ -1,7 +1,7 @@
 // React Query hooks: the only place that knows the cache keys and what each change invalidates.
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { assignmentsApi, coursesApi, studyApi } from "./endpoints";
+import { assignmentsApi, calendarFeedApi, coursesApi, studyApi } from "./endpoints";
 import type { AssignmentFilters, AssignmentUpdate, CourseUpdate, StudySessionFilters } from "./types";
 
 export const queryKeys = {
@@ -14,6 +14,7 @@ export const queryKeys = {
   sessionList: (filters: StudySessionFilters) => ["study-sessions", filters] as const,
   stats: ["stats"] as const,
   weekStats: (start: string, tz: string) => ["stats", "week", start, tz] as const,
+  calendarFeed: ["calendar-feed"] as const,
 };
 
 export function useCourses() {
@@ -116,5 +117,26 @@ export function useWeekStats(start: string, tz: string) {
     queryKey: queryKeys.weekStats(start, tz),
     queryFn: () => studyApi.week(start, tz),
     placeholderData: keepPreviousData, // keep last week's chart up while the next one loads
+  });
+}
+
+export function useCalendarFeed(enabled: boolean) {
+  return useQuery({ queryKey: queryKeys.calendarFeed, queryFn: calendarFeedApi.get, enabled });
+}
+
+/** Turning the feed on, replacing or removing it answers with the new state: no refetch needed. */
+export function useCreateCalendarFeed() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: calendarFeedApi.create,
+    onSuccess: (feed) => queryClient.setQueryData(queryKeys.calendarFeed, feed),
+  });
+}
+
+export function useDeleteCalendarFeed() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: calendarFeedApi.remove,
+    onSuccess: () => queryClient.setQueryData(queryKeys.calendarFeed, { path: null }),
   });
 }

@@ -77,6 +77,7 @@ def reset_demo_data(db: Session, user: User, zone: ZoneInfo, password: str | Non
     today = now.date()
 
     user.hashed_password = hash_password(password or secrets.token_urlsafe(32))
+    user.calendar_token = None  # an earlier visitor's feed URL stops working with their data
     # ON DELETE CASCADE takes the old assignments and study sessions with the courses.
     db.execute(delete(Course).where(Course.user_id == user.id))
     courses = [Course(user_id=user.id, code=c, name=n, color=col) for c, n, col in COURSES]

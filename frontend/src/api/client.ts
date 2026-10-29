@@ -3,6 +3,11 @@ import { getToken, setToken } from "../auth/token";
 // Empty in development (the Vite proxy forwards /api). Set at build time for a separate API host.
 const BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
+/** The full URL of an API path, for handing to something outside the app (a calendar app). */
+export function absoluteApiUrl(path: string): string {
+  return new URL(BASE_URL + path, window.location.origin).href;
+}
+
 export class ApiError extends Error {
   readonly status: number;
 

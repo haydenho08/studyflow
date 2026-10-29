@@ -4,6 +4,7 @@ import type {
   AssignmentCreate,
   AssignmentFilters,
   AssignmentUpdate,
+  CalendarFeed,
   Course,
   CourseCreate,
   CourseUpdate,
@@ -50,4 +51,11 @@ export const studyApi = {
     api<StudySession>("/api/study-sessions", { method: "POST", json: body }),
   remove: (id: number) => api<void>(`/api/study-sessions/${id}`, { method: "DELETE" }),
   week: (start: string, tz: string) => api<WeekStats>("/api/stats/week", { query: { start, tz } }),
+};
+
+export const calendarFeedApi = {
+  get: () => api<CalendarFeed>("/api/calendar-feed"),
+  // Turns the feed on, or swaps its secret URL for a new one.
+  create: () => api<CalendarFeed>("/api/calendar-feed", { method: "POST" }),
+  remove: () => api<void>("/api/calendar-feed", { method: "DELETE" }),
 };

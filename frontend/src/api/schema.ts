@@ -225,6 +225,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/calendar-feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Feed */
+        get: operations["read_feed_api_calendar_feed_get"];
+        put?: never;
+        /**
+         * Create Feed
+         * @description Turn the feed on, or replace its URL with a new one: the old URL stops working at once.
+         */
+        post: operations["create_feed_api_calendar_feed_post"];
+        /** Delete Feed */
+        delete: operations["delete_feed_api_calendar_feed_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calendar/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calendar Feed
+         * @description The user's deadlines as iCalendar, for Google, Apple or Outlook calendar to subscribe to.
+         *
+         *     No login: calendar apps can't send one, so the secret in the URL is the credential. An
+         *     unknown, replaced or switched-off token gets a 404, like a feed that never existed.
+         */
+        get: operations["calendar_feed_api_calendar__token__ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -320,6 +365,14 @@ export interface components {
              * Format: password
              */
             client_secret?: string | null;
+        };
+        /** CalendarFeed */
+        CalendarFeed: {
+            /**
+             * Path
+             * @description The feed's path on this site (/api/calendar/<secret>.ics), or null while off.
+             */
+            path: string | null;
         };
         /** CourseCreate */
         CourseCreate: {
@@ -1099,6 +1152,95 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeekStats"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_feed_api_calendar_feed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarFeed"];
+                };
+            };
+        };
+    };
+    create_feed_api_calendar_feed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarFeed"];
+                };
+            };
+        };
+    };
+    delete_feed_api_calendar_feed_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    calendar_feed_api_calendar__token__ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An iCalendar feed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": unknown;
                 };
             };
             /** @description Validation Error */
