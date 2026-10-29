@@ -8,6 +8,7 @@
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --primary-text: #ffffff;
+  --accent-2: #7c3aed; /* violet: the far end of brand gradients */
   --danger: #c2333a;
   --danger-bg: #fdecec;
   --warn-bg: #fff4e0;
@@ -22,6 +23,7 @@
   --radius-lg: 14px;
   --shadow: 0 1px 2px rgb(16 24 40 / 0.06);
   --shadow-lg: 0 12px 32px rgb(16 24 40 / 0.18);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --focus: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235d6679' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
   color-scheme: light;
@@ -40,6 +42,7 @@
     --primary: #5b8def;
     --primary-hover: #7aa3f3;
     --primary-text: #0b1020;
+    --accent-2: #a78bfa;
     --danger: #f07178;
     --danger-bg: #3a1d22;
     --warn-bg: #3a2c12;
@@ -2167,5 +2170,372 @@ details.card[open] > summary {
 
   .landing-footer-links {
     margin-left: 0;
+  }
+}
+
+/* --- motion -------------------------------------------------------------------------------- */
+/* Short, ease-out movement that confirms what just happened. All of it is switched off for
+   people who ask their system for reduced motion (the block at the very end). */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+html {
+  scroll-padding-top: 5rem; /* in-page links land below the sticky landing header */
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Each page eases in as you navigate to it. */
+.page,
+.auth-layout,
+.not-found {
+  animation: rise 0.35s var(--ease-out) both;
+}
+
+/* List rows arrive one after another; capped so long lists don't take ages. */
+.list > li {
+  animation: rise 0.35s var(--ease-out) both;
+  animation-delay: calc(min(var(--n, 0), 8) * 28ms);
+}
+
+.list > li:nth-child(2) { --n: 1; }
+.list > li:nth-child(3) { --n: 2; }
+.list > li:nth-child(4) { --n: 3; }
+.list > li:nth-child(5) { --n: 4; }
+.list > li:nth-child(6) { --n: 5; }
+.list > li:nth-child(7) { --n: 6; }
+.list > li:nth-child(8) { --n: 7; }
+.list > li:nth-child(n + 9) { --n: 8; }
+
+.week-grid .day {
+  animation: rise 0.35s var(--ease-out) both;
+}
+
+.week-grid .day:nth-child(2) { animation-delay: 25ms; }
+.week-grid .day:nth-child(3) { animation-delay: 50ms; }
+.week-grid .day:nth-child(4) { animation-delay: 75ms; }
+.week-grid .day:nth-child(5) { animation-delay: 100ms; }
+.week-grid .day:nth-child(6) { animation-delay: 125ms; }
+.week-grid .day:nth-child(7) { animation-delay: 150ms; }
+
+/* Buttons press in slightly, and the primary one lifts on hover. */
+.btn {
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.2s,
+    transform 0.15s var(--ease-out);
+}
+
+.btn:active:not(:disabled),
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.btn-large svg {
+  transition: transform 0.2s var(--ease-out);
+}
+
+.btn-large:hover:not(:disabled) svg {
+  transform: translateX(3px);
+}
+
+.nav a {
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.row-item {
+  transition:
+    border-color 0.15s,
+    box-shadow 0.2s,
+    opacity 0.2s;
+}
+
+.row-item:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 2px 10px rgb(16 24 40 / 0.06);
+}
+
+.deadline {
+  transition:
+    opacity 0.2s,
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.deadline:hover {
+  border-color: var(--border-strong);
+}
+
+.dialog[open]::backdrop {
+  animation: fade-in 0.18s ease-out;
+}
+
+/* Chart bars grow up from the baseline, a day at a time. */
+@keyframes grow-up {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes grow-right {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.chart .bars {
+  /* transform-origin (the baseline) is set inline, in chart coordinates */
+  animation: grow-up 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.chart .value-label {
+  animation: fade-in 0.3s ease-out both;
+  animation-delay: calc(var(--i, 0) * 45ms + 0.35s);
+}
+
+.breakdown-bar {
+  transform-origin: left center;
+  animation: grow-right 0.6s var(--ease-out) both;
+}
+
+.timer-card {
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.timer-card.phase-focus {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.timer-card.phase-break {
+  border-color: color-mix(in srgb, var(--low) 35%, var(--border));
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--low) 12%, transparent);
+}
+
+/* --- landing motion ---------------------------------------------------------------------- */
+
+.landing-header {
+  border-bottom-color: transparent;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background-color 0.2s;
+}
+
+.landing-header.is-scrolled {
+  border-bottom-color: var(--border);
+  box-shadow: 0 4px 20px rgb(16 24 40 / 0.06);
+}
+
+.landing-gradient {
+  background: linear-gradient(90deg, var(--primary), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Two soft glows drifting slowly behind the hero. */
+.landing-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.landing-hero::before,
+.landing-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 38rem;
+  height: 38rem;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.22;
+  pointer-events: none;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+.landing-hero::before {
+  top: -18rem;
+  left: calc(50% - 34rem);
+  background: var(--primary);
+}
+
+.landing-hero::after {
+  top: -14rem;
+  left: calc(50% - 2rem);
+  background: var(--accent-2);
+  animation-delay: -9s;
+}
+
+@keyframes drift {
+  to {
+    transform: translate(4rem, 3rem) scale(1.1);
+  }
+}
+
+/* The hero's parts arrive in reading order. */
+.landing-hero .landing-container > * {
+  animation: rise 0.7s var(--ease-out) both;
+}
+
+.landing-hero .landing-container > :nth-child(2) { animation-delay: 0.08s; }
+.landing-hero .landing-container > :nth-child(3) { animation-delay: 0.16s; }
+.landing-hero .landing-container > :nth-child(4) { animation-delay: 0.24s; }
+.landing-hero .landing-container > :nth-child(5) { animation-delay: 0.3s; }
+.landing-hero .landing-container > :nth-child(6) {
+  animation: hero-shot 1s var(--ease-out) 0.36s both;
+}
+
+@keyframes hero-shot {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+}
+
+.landing-phone {
+  animation: float 7s ease-in-out 1.4s infinite;
+}
+
+@keyframes float {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Scroll reveal (see useReveal): hidden only once the observer is running. */
+.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+
+.reveal-ready .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.reveal-ready .landing-feature-shot.reveal {
+  transform: translateY(40px) scale(0.98);
+  transition-delay: 0.1s;
+}
+
+.landing-feature-shot.is-visible .shot,
+.landing-hero-shot .shot {
+  transition:
+    transform 0.4s var(--ease-out),
+    box-shadow 0.4s var(--ease-out);
+}
+
+.landing-feature-shot .shot:hover,
+.landing-hero-shot .shot:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px rgb(16 24 40 / 0.2);
+}
+
+/* After it has revealed, a card's own hover transition takes over (no reveal delay). */
+.landing-extras li.is-visible {
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.3s var(--ease-out),
+    border-color 0.2s,
+    box-shadow 0.3s;
+}
+
+.landing-extras li.is-visible:hover {
+  transform: translateY(-4px);
+  transition-delay: 0s;
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  box-shadow: 0 12px 28px rgb(16 24 40 / 0.1);
+}
+
+.landing-extra-icon {
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.landing-extras li:hover .landing-extra-icon {
+  color: var(--primary-text);
+  background: var(--primary);
+}
+
+.landing-final {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent-2) 100%);
+}
+
+.landing-final::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -40% -10% auto auto;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.28), transparent);
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+.landing-final-primary {
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+}
+
+.landing-final-primary:hover {
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.22);
+}
+
+/* --- reduced motion: everything above settles instantly ------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+
+  .reveal-ready .reveal {
+    opacity: 1;
+    transform: none;
   }
 }

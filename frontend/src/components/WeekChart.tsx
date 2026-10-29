@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
 import type { Course, DayStats } from "../api/types";
 import { useDisplayColor } from "../hooks/useDisplayColor";
@@ -89,6 +89,7 @@ export function WeekChart({ days, courses }: Props) {
               <g
                 key={day.day}
                 className="column"
+                style={{ "--i": i } as CSSProperties} // staggers the grow-in animation by day
                 tabIndex={0}
                 role="img"
                 aria-label={label}
@@ -99,18 +100,21 @@ export function WeekChart({ days, courses }: Props) {
               >
                 {/* The whole day's band is the hit target, not just the thin bar. */}
                 <rect className="hit" x={MARGIN.left + BAND * i} y={MARGIN.top} width={BAND} height={PLOT_H} />
-                {segments.map((s, j) => {
-                  const bottom = y(cumulative);
-                  cumulative += s.minutes;
-                  const isTop = j === segments.length - 1;
-                  const segTop = y(cumulative) + (isTop ? 0 : GAP);
-                  const h = Math.max(1, bottom - segTop);
-                  return isTop ? (
-                    <path key={s.course.id} d={roundedTopPath(x, segTop, BAR_W, h)} fill={color(s.course.color)} />
-                  ) : (
-                    <rect key={s.course.id} x={x} y={segTop} width={BAR_W} height={h} fill={color(s.course.color)} />
-                  );
-                })}
+                {/* One group per stack, so the whole bar grows from the baseline as one piece. */}
+                <g className="bars" style={{ transformOrigin: `0 ${y(0)}px` }}>
+                  {segments.map((s, j) => {
+                    const bottom = y(cumulative);
+                    cumulative += s.minutes;
+                    const isTop = j === segments.length - 1;
+                    const segTop = y(cumulative) + (isTop ? 0 : GAP);
+                    const h = Math.max(1, bottom - segTop);
+                    return isTop ? (
+                      <path key={s.course.id} d={roundedTopPath(x, segTop, BAR_W, h)} fill={color(s.course.color)} />
+                    ) : (
+                      <rect key={s.course.id} x={x} y={segTop} width={BAR_W} height={h} fill={color(s.course.color)} />
+                    );
+                  })}
+                </g>
                 {showValueLabels && day.total_seconds > 0 && (
                   <text className="value-label" x={cx} y={y(cumulative) - 6} textAnchor="middle">
                     {formatDuration(day.total_seconds)}

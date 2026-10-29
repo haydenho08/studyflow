@@ -10,6 +10,7 @@ import {
   Timer,
   type LucideIcon,
 } from "lucide-react";
+import { useRef, type CSSProperties } from "react";
 import { Link } from "react-router";
 
 import assignmentsShot from "../assets/landing/assignments.webp";
@@ -22,6 +23,7 @@ import studyShot from "../assets/landing/study.webp";
 import { DemoButton } from "../components/DemoButton";
 import { BrandMark } from "../components/Feedback";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useReveal, useScrolledPast } from "../hooks/useReveal";
 import { SOURCE_URL } from "../lib/links";
 
 type Feature = {
@@ -156,13 +158,19 @@ function Shot({
   );
 }
 
+/** Index `i` as a CSS variable, so CSS can stagger siblings with calc(var(--i) * ...). */
+const stagger = (i: number) => ({ "--i": i }) as CSSProperties;
+
 /** The public front page: what StudyFlow is, what it does, and two ways in. */
 export function LandingPage() {
   usePageTitle(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useReveal(rootRef);
+  const scrolled = useScrolledPast(8);
 
   return (
-    <div className="landing">
-      <header className="landing-header">
+    <div className="landing" ref={rootRef}>
+      <header className={`landing-header${scrolled ? " is-scrolled" : ""}`}>
         <div className="landing-container landing-header-inner">
           <Link to="/" className="brand">
             <BrandMark />
@@ -190,7 +198,9 @@ export function LandingPage() {
         <section className="landing-hero">
           <div className="landing-container">
             <p className="landing-eyebrow">Free and open source, built for students</p>
-            <h1>Every deadline and every study hour, in one place.</h1>
+            <h1>
+              Every deadline and every study hour, <span className="landing-gradient">in one place.</span>
+            </h1>
             <p className="landing-lede">
               StudyFlow keeps your courses, assignments and focus time side by side, so you can see
               what's due this week and where your time actually went.
@@ -227,7 +237,7 @@ export function LandingPage() {
 
         <section id="features" className="landing-section" aria-labelledby="features-title">
           <div className="landing-container">
-            <div className="landing-section-head">
+            <div className="landing-section-head reveal">
               <p className="landing-eyebrow">Features</p>
               <h2 id="features-title">Everything a term throws at you</h2>
               <p className="muted">
@@ -238,7 +248,7 @@ export function LandingPage() {
             <div className="landing-features">
               {FEATURES.map(({ icon: Icon, eyebrow, title, body, points, shot, alt }) => (
                 <article key={eyebrow} className="landing-feature">
-                  <div className="landing-feature-text">
+                  <div className="landing-feature-text reveal">
                     <p className="landing-feature-eyebrow">
                       <Icon size={18} aria-hidden="true" />
                       {eyebrow}
@@ -254,14 +264,16 @@ export function LandingPage() {
                       ))}
                     </ul>
                   </div>
-                  <Shot src={shot} alt={alt} />
+                  <div className="reveal landing-feature-shot">
+                    <Shot src={shot} alt={alt} />
+                  </div>
                 </article>
               ))}
             </div>
 
             <ul className="landing-extras">
-              {EXTRAS.map(({ icon: Icon, title, body }) => (
-                <li key={title} className="card">
+              {EXTRAS.map(({ icon: Icon, title, body }, i) => (
+                <li key={title} className="card reveal" style={stagger(i)}>
                   <span className="landing-extra-icon">
                     <Icon size={20} aria-hidden="true" />
                   </span>
@@ -275,13 +287,13 @@ export function LandingPage() {
 
         <section id="how-it-works" className="landing-section" aria-labelledby="steps-title">
           <div className="landing-container">
-            <div className="landing-section-head">
+            <div className="landing-section-head reveal">
               <p className="landing-eyebrow">How it works</p>
               <h2 id="steps-title">Set up in a couple of minutes</h2>
             </div>
             <ol className="landing-steps">
-              {STEPS.map(({ title, body }) => (
-                <li key={title}>
+              {STEPS.map(({ title, body }, i) => (
+                <li key={title} className="reveal" style={stagger(i)}>
                   <h3>{title}</h3>
                   <p className="muted">{body}</p>
                 </li>
@@ -292,7 +304,7 @@ export function LandingPage() {
 
         <section className="landing-section" aria-labelledby="start-title">
           <div className="landing-container">
-            <div className="landing-final">
+            <div className="landing-final reveal">
               <h2 id="start-title">Get your week under control</h2>
               <p>Free, no credit card, and you can try the full app before you sign up.</p>
               <div className="landing-cta">

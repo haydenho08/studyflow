@@ -1,8 +1,11 @@
 // Regenerates the README screenshots in docs/screenshots/.
 //
-// Prerequisites: API + Vite dev server running, and the demo account seeded:
+// Prerequisites: API + Vite dev server running, with either the demo endpoint switched on
+// (DEMO_ENABLED=true) or the demo account seeded:
 //   cd backend && python -m scripts.seed_demo
 //   cd frontend && npm run screenshots
+//
+// Pages are captured with reduced motion, so entrance animations are already settled.
 //
 // Uses playwright-core with the installed Microsoft Edge (channel "msedge"), so there's no
 // separate browser download. Set BROWSER_CHANNEL=chrome to use Google Chrome instead.
@@ -22,10 +25,17 @@ async function api(path, init = {}) {
   return response.json();
 }
 
-const { access_token: token } = await api("/api/auth/login", {
-  method: "POST",
-  body: new URLSearchParams({ username: EMAIL, password: PASSWORD }),
-});
+/** The demo endpoint if it's on (it also refreshes the data); otherwise the seeded password. */
+async function demoToken() {
+  try {
+    return (await api("/api/auth/demo", { method: "POST" })).access_token;
+  } catch {
+    const body = new URLSearchParams({ username: EMAIL, password: PASSWORD });
+    return (await api("/api/auth/login", { method: "POST", body })).access_token;
+  }
+}
+
+const token = await demoToken();
 const auth = { headers: { Authorization: `Bearer ${token}` } };
 const me = await api("/api/auth/me", auth);
 const courses = await api("/api/courses", auth);
@@ -74,6 +84,7 @@ for (const shot of shots) {
     colorScheme: shot.scheme,
     timezoneId: TZ,
     locale: "en-CA",
+    reducedMotion: "reduce",
   });
   // Log in by planting the token before any page script runs (the same thing login does).
   await context.addInitScript(
