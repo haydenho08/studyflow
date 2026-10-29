@@ -1,4 +1,4 @@
-import { BookOpen, ListChecks, Pencil, Plus, SearchX, Trash2, X } from "lucide-react";
+import { BookOpen, ListChecks, Pencil, Plus, Repeat, SearchX, Trash2, X } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 
@@ -6,11 +6,12 @@ import {
   useAssignments,
   useCourses,
   useCreateAssignment,
+  useCreateSeries,
   useDeleteAssignment,
   useUpdateAssignment,
 } from "../api/queries";
 import type { Assignment, AssignmentKind, Course, Priority, Status } from "../api/types";
-import { useConfirm } from "../components/ConfirmDialog";
+import { useChoose, useConfirm } from "../components/ConfirmDialog";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { EmptyState, SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
@@ -25,6 +26,8 @@ import { changedFields, isEmpty } from "../lib/diff";
 import { readFilterParams, toApiFilters } from "../lib/filters";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { KIND_LABELS, PRIORITY_LABELS, STATUS_LABELS, optionsOf } from "../lib/labels";
+import { NO_REPEAT, WEEKDAYS, describeRepeat, toRepeatRule, weekdayOf, type RepeatValues } from "../lib/recurrence";
+import { browserTimeZone } from "../lib/week";
 
 // --- form -------------------------------------------------------------------------------------
 
@@ -60,20 +63,125 @@ function formValuesFrom(assignment: Assignment): AssignmentFormValues {
   };
 }
 
+/** "Repeats weekly": which days, how often, and when it ends. Only on the new-assignment form. */
+function RepeatFields({
+  repeat,
+  due,
+  onChange,
+}: {
+  repeat: RepeatValues;
+  due: string;
+  onChange: (repeat: RepeatValues) => void;
+}) {
+  const firstDay = due ? weekdayOf(due) : -1;
+  const set = <K extends keyof RepeatValues>(field: K, value: RepeatValues[K]) =>
+    onChange({ ...repeat, [field]: value });
+
+  function toggle(day: number) {
+    const days = repeat.weekdays.includes(day)
+      ? repeat.weekdays.filter((d) => d !== day)
+      : [...repeat.weekdays, day];
+    set("weekdays", days);
+  }
+
+  return (
+    <fieldset className="repeat span-all">
+      <label className="check">
+        <input type="checkbox" checked={repeat.enabled} onChange={(e) => set("enabled", e.target.checked)} />
+        Repeats weekly
+      </label>
+      {repeat.enabled && (
+        <>
+          <div className="weekday-picker" role="group" aria-label="Repeat on">
+            {WEEKDAYS.map((name, day) => {
+              // The first due date's own day is always included (that's where the series starts).
+              const fixed = day === firstDay;
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className="weekday"
+                  aria-pressed={fixed || repeat.weekdays.includes(day)}
+                  disabled={fixed}
+                  title={fixed ? "The first due date is on this day" : undefined}
+                  onClick={() => toggle(day)}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+          <div className="repeat-fields">
+            <label className="field">
+              <span>Every</span>
+              <select value={repeat.everyWeeks} onChange={(e) => set("everyWeeks", Number(e.target.value))}>
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={n}>
+                    {n === 1 ? "week" : `${n} weeks`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Ends</span>
+              <select value={repeat.end} onChange={(e) => set("end", e.target.value as RepeatValues["end"])}>
+                <option value="count">After a number of deadlines</option>
+                <option value="until">On a date</option>
+              </select>
+            </label>
+            {repeat.end === "count" ? (
+              <label className="field">
+                <span>Deadlines</span>
+                <input
+                  type="number"
+                  required
+                  min={2}
+                  max={52}
+                  value={repeat.count}
+                  onChange={(e) => set("count", e.target.value)}
+                />
+              </label>
+            ) : (
+              <label className="field">
+                <span>Last date</span>
+                <input
+                  type="date"
+                  required
+                  min={due.slice(0, 10)}
+                  value={repeat.until}
+                  onChange={(e) => set("until", e.target.value)}
+                />
+              </label>
+            )}
+          </div>
+          <p className="muted repeat-summary">
+            {describeRepeat(repeat, due)}. Put <code>{"{n}"}</code> in the title to number them:
+            &ldquo;Lab {"{n}"}&rdquo; becomes Lab 1, Lab 2…
+          </p>
+        </>
+      )}
+    </fieldset>
+  );
+}
+
 function AssignmentForm({
   courses,
   initial,
   submitLabel,
+  repeatable = false,
   onSubmit,
   onCancel,
 }: {
   courses: Course[];
   initial: AssignmentFormValues;
   submitLabel: string;
-  onSubmit: (values: AssignmentFormValues) => Promise<unknown>;
+  /** Offer "Repeats weekly" (new assignments only: a series is created all at once). */
+  repeatable?: boolean;
+  onSubmit: (values: AssignmentFormValues, repeat: RepeatValues) => Promise<unknown>;
   onCancel: () => void;
 }) {
   const [values, setValues] = useState(initial);
+  const [repeat, setRepeat] = useState(NO_REPEAT);
   const [error, setError] = useState<unknown>(null);
   const [pending, setPending] = useState(false);
 
@@ -86,7 +194,7 @@ function AssignmentForm({
     setError(null);
     setPending(true);
     try {
-      await onSubmit(values);
+      await onSubmit(values, repeat);
     } catch (err) {
       setError(err);
     } finally {
@@ -157,6 +265,7 @@ function AssignmentForm({
           onChange={(e) => set("description", e.target.value)}
         />
       </label>
+      {repeatable && <RepeatFields repeat={repeat} due={values.due} onChange={setRepeat} />}
       <div className="form-actions span-all">
         <button type="submit" className="btn btn-primary" disabled={pending}>
           {submitLabel}
@@ -177,6 +286,31 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
   const updateAssignment = useUpdateAssignment();
   const deleteAssignment = useDeleteAssignment();
   const confirm = useConfirm();
+  const choose = useChoose();
+  const inSeries = assignment.series_id !== null;
+
+  /** For a deadline in a repeating series: just this one, or the later ones too? */
+  function askScope(action: "change" | "delete") {
+    if (action === "change") {
+      return choose({
+        title: "Change a repeating deadline",
+        message:
+          "Apply this to only this deadline, or to this one and every later one in the series? To keep later ones numbered, use {n} in the title.",
+        choices: [
+          { value: "this", label: "Only this one" },
+          { value: "following", label: "This and following" },
+        ],
+      });
+    }
+    return choose({
+      title: `Delete "${assignment.title}"?`,
+      message: "It repeats. Delete only this deadline, or this one and every later one? This can't be undone.",
+      choices: [
+        { value: "this", label: "Only this one", danger: true },
+        { value: "following", label: "This and following", danger: true },
+      ],
+    });
+  }
 
   if (editing) {
     const initial = formValuesFrom(assignment);
@@ -191,7 +325,9 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
             // Compare in API shape, so "same instant, different string" doesn't count as a change.
             const changes = changedFields(toPayload(initial), toPayload(values));
             if (!isEmpty(changes)) {
-              await updateAssignment.mutateAsync({ id: assignment.id, changes });
+              const scope = inSeries ? await askScope("change") : "this";
+              if (scope === null) return; // cancelled: keep editing
+              await updateAssignment.mutateAsync({ id: assignment.id, changes, scope });
             }
             setEditing(false);
           }}
@@ -204,13 +340,18 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
   const overdue = !done && new Date(assignment.due_at) < new Date();
 
   async function handleDelete() {
+    if (inSeries) {
+      const scope = await askScope("delete");
+      if (scope) deleteAssignment.mutate({ id: assignment.id, scope });
+      return;
+    }
     const ok = await confirm({
       title: `Delete "${assignment.title}"?`,
       message: "This can't be undone.",
       confirmLabel: "Delete",
       danger: true,
     });
-    if (ok) deleteAssignment.mutate(assignment.id);
+    if (ok) deleteAssignment.mutate({ id: assignment.id });
   }
 
   return (
@@ -221,6 +362,12 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
         <div className="muted row-meta">
           <span>{course?.code}</span>
           <span>{KIND_LABELS[assignment.kind]}</span>
+          {inSeries && (
+            <span className="repeat-tag" title="Part of a repeating series">
+              <Repeat size={13} aria-hidden="true" />
+              Repeats
+            </span>
+          )}
           <time dateTime={assignment.due_at}>
             {formatDue(assignment.due_at)} ({overdue ? "overdue, " : ""}
             {formatRelative(assignment.due_at)})
@@ -283,6 +430,7 @@ export function AssignmentsPage() {
   const courses = useCourses();
   const assignments = useAssignments(apiFilters);
   const createAssignment = useCreateAssignment();
+  const createSeries = useCreateSeries();
   const [adding, setAdding] = useState(false);
 
   const courseList = courses.data ?? [];
@@ -343,9 +491,15 @@ export function AssignmentsPage() {
               description: "",
             }}
             submitLabel="Add assignment"
+            repeatable
             onCancel={() => setAdding(false)}
-            onSubmit={async (values) => {
-              await createAssignment.mutateAsync(toPayload(values));
+            onSubmit={async (values, repeat) => {
+              if (repeat.enabled) {
+                const rule = toRepeatRule(repeat, values.due, browserTimeZone());
+                await createSeries.mutateAsync({ ...toPayload(values), repeat: rule });
+              } else {
+                await createAssignment.mutateAsync(toPayload(values));
+              }
               setAdding(false);
             }}
           />

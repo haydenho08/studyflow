@@ -1,8 +1,9 @@
+import uuid
 from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, TimestampMixin
@@ -49,5 +50,8 @@ class Assignment(TimestampMixin, Base):
     status: Mapped[Status] = mapped_column(
         _str_enum(Status, "status"), server_default=Status.TODO.value
     )
+    # Deadlines created together as a repeating series share this id ("Lab {n}" every Friday),
+    # so they can be edited or deleted "from this one onwards". None for one-off deadlines.
+    series_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
 
     course: Mapped["Course"] = relationship(back_populates="assignments")

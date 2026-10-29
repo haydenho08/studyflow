@@ -706,6 +706,170 @@
         }
       }
     },
+    "/api/assignments/series": {
+      "post": {
+        "tags": [
+          "assignments"
+        ],
+        "summary": "Create Series",
+        "description": "Create a weekly repeating deadline: one row per due date, all sharing a series_id.",
+        "operationId": "create_series_api_assignments_series_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentSeriesCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssignmentRead"
+                  },
+                  "type": "array",
+                  "title": "Response Create Series Api Assignments Series Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/assignments/{assignment_id}/following": {
+      "patch": {
+        "tags": [
+          "assignments"
+        ],
+        "summary": "Update Following",
+        "description": "Change this deadline and every later one in its series.\n\nA new due_at moves each of them by the same wall-clock change (e.g. \"Fridays 23:59\" to\n\"Mondays 09:00\"), and \"{n}\" in a new title is numbered by position in the series.",
+        "operationId": "update_following_api_assignments__assignment_id__following_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Time zone the due-time change is in",
+              "title": "Tz"
+            },
+            "description": "Time zone the due-time change is in"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssignmentRead"
+                  },
+                  "title": "Response Update Following Api Assignments  Assignment Id  Following Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "assignments"
+        ],
+        "summary": "Delete Following",
+        "description": "Delete this deadline and every later one in its series (the earlier ones stay).",
+        "operationId": "delete_following_api_assignments__assignment_id__following_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/assignments/{assignment_id}": {
       "get": {
         "tags": [
@@ -1311,6 +1475,18 @@
           "status": {
             "$ref": "#/components/schemas/Status"
           },
+          "series_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Id"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1332,10 +1508,67 @@
           "due_at",
           "priority",
           "status",
+          "series_id",
           "created_at",
           "updated_at"
         ],
         "title": "AssignmentRead"
+      },
+      "AssignmentSeriesCreate": {
+        "properties": {
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AssignmentKind",
+            "default": "assignment"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Due At"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority",
+            "default": "medium"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status",
+            "default": "todo"
+          },
+          "repeat": {
+            "$ref": "#/components/schemas/RepeatRule"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "course_id",
+          "title",
+          "due_at",
+          "repeat"
+        ],
+        "title": "AssignmentSeriesCreate",
+        "description": "A first deadline (due_at) plus how it repeats. \"{n}\" in the title becomes 1, 2, 3\u2026"
       },
       "AssignmentUpdate": {
         "properties": {
@@ -1718,6 +1951,68 @@
           "high"
         ],
         "title": "Priority"
+      },
+      "RepeatRule": {
+        "properties": {
+          "weekdays": {
+            "items": {
+              "type": "integer",
+              "maximum": 6.0,
+              "minimum": 0.0,
+              "description": "Monday = 0 \u2026 Sunday = 6"
+            },
+            "type": "array",
+            "maxItems": 7,
+            "minItems": 1,
+            "title": "Weekdays"
+          },
+          "every_weeks": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Every Weeks",
+            "default": 1
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 52.0,
+                "minimum": 2.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until",
+            "description": "Last possible due date (inclusive)"
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Time Zone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "weekdays",
+          "time_zone"
+        ],
+        "title": "RepeatRule",
+        "description": "Repeat weekly, on some days of the week, until a date or for a number of deadlines."
       },
       "Status": {
         "type": "string",

@@ -209,6 +209,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignments/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Series
+         * @description Create a weekly repeating deadline: one row per due date, all sharing a series_id.
+         */
+        post: operations["create_series_api_assignments_series_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignments/{assignment_id}/following": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Following
+         * @description Delete this deadline and every later one in its series (the earlier ones stay).
+         */
+        delete: operations["delete_following_api_assignments__assignment_id__following_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Following
+         * @description Change this deadline and every later one in its series.
+         *
+         *     A new due_at moves each of them by the same wall-clock change (e.g. "Fridays 23:59" to
+         *     "Mondays 09:00"), and "{n}" in a new title is numbered by position in the series.
+         */
+        patch: operations["update_following_api_assignments__assignment_id__following_patch"];
+        trace?: never;
+    };
     "/api/assignments/{assignment_id}": {
         parameters: {
             query?: never;
@@ -379,6 +426,8 @@ export interface components {
             due_at: string;
             priority: components["schemas"]["Priority"];
             status: components["schemas"]["Status"];
+            /** Series Id */
+            series_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -389,6 +438,30 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * AssignmentSeriesCreate
+         * @description A first deadline (due_at) plus how it repeats. "{n}" in the title becomes 1, 2, 3…
+         */
+        AssignmentSeriesCreate: {
+            /** Course Id */
+            course_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** @default assignment */
+            kind?: components["schemas"]["AssignmentKind"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** @default medium */
+            priority?: components["schemas"]["Priority"];
+            /** @default todo */
+            status?: components["schemas"]["Status"];
+            repeat: components["schemas"]["RepeatRule"];
         };
         /** AssignmentUpdate */
         AssignmentUpdate: {
@@ -524,6 +597,28 @@ export interface components {
          * @enum {string}
          */
         Priority: "low" | "medium" | "high";
+        /**
+         * RepeatRule
+         * @description Repeat weekly, on some days of the week, until a date or for a number of deadlines.
+         */
+        RepeatRule: {
+            /** Weekdays */
+            weekdays: number[];
+            /**
+             * Every Weeks
+             * @default 1
+             */
+            every_weeks?: number;
+            /** Count */
+            count?: number | null;
+            /**
+             * Until
+             * @description Last possible due date (inclusive)
+             */
+            until?: string | null;
+            /** Time Zone */
+            time_zone: string;
+        };
         /**
          * Status
          * @enum {string}
@@ -1065,6 +1160,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssignmentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_series_api_assignments_series_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentSeriesCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_following_api_assignments__assignment_id__following_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_following_api_assignments__assignment_id__following_patch: {
+        parameters: {
+            query: {
+                /** @description Time zone the due-time change is in */
+                tz: string;
+            };
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentRead"][];
                 };
             };
             /** @description Validation Error */

@@ -961,6 +961,73 @@ select.status-select.status-done {
   grid-column: 1 / -1;
 }
 
+/* "Repeats weekly" on the new-assignment form. */
+.repeat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.weekday-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.weekday {
+  min-width: 2.75rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.weekday[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.weekday:disabled {
+  cursor: default;
+}
+
+.repeat-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.repeat-summary {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.repeat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 /* --- small screens ------------------------------------------------------------------------- */
 
 @media (max-width: 640px) {
@@ -1065,6 +1132,7 @@ select.status-select.status-done {
 
 .dialog-actions {
   display: flex;
+  flex-wrap: wrap; /* three buttons ("Cancel", "Only this one", "This and following") on a phone */
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 1.25rem;

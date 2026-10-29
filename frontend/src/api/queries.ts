@@ -1,6 +1,7 @@
 // React Query hooks: the only place that knows the cache keys and what each change invalidates.
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { browserTimeZone } from "../lib/week";
 import { assignmentsApi, calendarFeedApi, coursesApi, studyApi } from "./endpoints";
 import type { AssignmentFilters, AssignmentUpdate, CourseUpdate, StudySessionFilters } from "./types";
 
@@ -69,11 +70,32 @@ export function useCreateAssignment() {
   });
 }
 
+export function useCreateSeries() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: assignmentsApi.createSeries,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+  });
+}
+
+/** "following": this deadline and the later ones in its series. */
+type Scope = "this" | "following";
+
 export function useUpdateAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, changes }: { id: number; changes: AssignmentUpdate }) =>
-      assignmentsApi.update(id, changes),
+    mutationFn: ({
+      id,
+      changes,
+      scope = "this",
+    }: {
+      id: number;
+      changes: AssignmentUpdate;
+      scope?: Scope;
+    }): Promise<unknown> =>
+      scope === "following"
+        ? assignmentsApi.updateFollowing(id, changes, browserTimeZone())
+        : assignmentsApi.update(id, changes),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
   });
 }
@@ -81,7 +103,8 @@ export function useUpdateAssignment() {
 export function useDeleteAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: assignmentsApi.remove,
+    mutationFn: ({ id, scope = "this" }: { id: number; scope?: Scope }) =>
+      scope === "following" ? assignmentsApi.removeFollowing(id) : assignmentsApi.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
   });
 }

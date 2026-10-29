@@ -3,6 +3,7 @@ import type {
   Assignment,
   AssignmentCreate,
   AssignmentFilters,
+  AssignmentSeriesCreate,
   AssignmentUpdate,
   CalendarFeed,
   Course,
@@ -46,6 +47,13 @@ export const assignmentsApi = {
   update: (id: number, changes: AssignmentUpdate) =>
     api<Assignment>(`/api/assignments/${id}`, { method: "PATCH", json: changes }),
   remove: (id: number) => api<void>(`/api/assignments/${id}`, { method: "DELETE" }),
+  // Repeating deadlines: one call creates the whole series.
+  createSeries: (body: AssignmentSeriesCreate) =>
+    api<Assignment[]>("/api/assignments/series", { method: "POST", json: body }),
+  // "This and following" in a series. `tz` is the zone a due-time change is meant in.
+  updateFollowing: (id: number, changes: AssignmentUpdate, tz: string) =>
+    api<Assignment[]>(`/api/assignments/${id}/following`, { method: "PATCH", json: changes, query: { tz } }),
+  removeFollowing: (id: number) => api<void>(`/api/assignments/${id}/following`, { method: "DELETE" }),
 };
 
 export const studyApi = {
