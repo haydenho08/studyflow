@@ -113,6 +113,55 @@
         }
       }
     },
+    "/api/auth/demo": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Demo Login",
+        "description": "Log in as the shared demo account, rebuilding its data first if it's over an hour old.",
+        "operationId": "demo_login_api_auth_demo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DemoLogin"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/me": {
       "get": {
         "tags": [
@@ -1393,6 +1442,19 @@
           "courses"
         ],
         "title": "DayStats"
+      },
+      "DemoLogin": {
+        "properties": {
+          "tz": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Tz",
+            "default": "America/Toronto"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DemoLogin"
       },
       "HTTPValidationError": {
         "properties": {

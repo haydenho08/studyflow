@@ -13,6 +13,7 @@ import { authApi } from "../api/endpoints";
 import { queryKeys } from "../api/queries";
 import type { User } from "../api/types";
 import { IDLE, saveTimer } from "../lib/pomodoro";
+import { browserTimeZone } from "../lib/week";
 import { getToken, setToken, subscribe } from "./token";
 
 interface AuthState {
@@ -21,6 +22,8 @@ interface AuthState {
   /** True while we have a token but haven't loaded /me yet. */
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Log in as the shared demo account (the server refreshes its data if it's stale). */
+  loginDemo: () => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -56,6 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
+  const loginDemo = useCallback(async () => {
+    const { access_token } = await authApi.demo(browserTimeZone());
+    queryClient.clear();
+    setToken(access_token);
+  }, [queryClient]);
+
   const register = useCallback(
     async (email: string, password: string) => {
       await authApi.register(email, password);
@@ -76,10 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: token !== null,
       isLoading: token !== null && me.isPending,
       login,
+      loginDemo,
       register,
       logout,
     }),
-    [me.data, me.isPending, token, login, register, logout],
+    [me.data, me.isPending, token, login, loginDemo, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

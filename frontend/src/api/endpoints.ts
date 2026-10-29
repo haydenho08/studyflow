@@ -22,6 +22,8 @@ export const authApi = {
   login: (email: string, password: string) =>
     api<Token>("/api/auth/login", { method: "POST", form: { username: email, password } }),
   me: () => api<User>("/api/auth/me"),
+  // One-click demo; `tz` makes the demo's "this week" the visitor's week.
+  demo: (tz: string) => api<Token>("/api/auth/demo", { method: "POST", json: { tz } }),
 };
 
 export const coursesApi = {

@@ -295,8 +295,59 @@ textarea:focus-visible,
   padding: 1rem;
 }
 
+/* Pitch + demo button beside the form on wide screens; stacked (pitch first) on phones. */
+.auth-layout {
+  width: min(100%, 880px);
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 3rem;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 420px;
+  }
+}
+
+.pitch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.pitch .brand {
+  font-size: 2.4rem;
+  margin: 0;
+}
+
+.pitch-tagline {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.pitch-features {
+  margin: 0 0 0.5rem;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pitch-note,
+.pitch-source {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 .auth-card {
-  width: min(100%, 380px);
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 1rem;
