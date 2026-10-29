@@ -25,16 +25,20 @@ browser ──HTTPS──▶ Render web service (Docker: FastAPI + static React 
 
 From then on, every push to `main` deploys **only after CI passes** (`autoDeployTrigger: checksPass`).
 
-## 3. Optional: a demo account
+## 3. The demo account (automatic)
 
-Recruiters can log in instead of registering. From `backend/`, point the seed script at Neon for this one command (the variable only lasts for this PowerShell window):
+`render.yaml` sets `DEMO_ENABLED=true`, which turns on the login page's **Explore the demo** button (`POST /api/auth/demo`). Nothing to seed by hand:
+- The first click creates `demo@studyflow.app` with sample data.
+- Any click when the data is **over an hour old** rebuilds it around *today*, in the visitor's time zone. The demo never shows a stale week, and anything an earlier visitor typed in is cleared out.
+- Each rebuild gives the account a new random password, so the button is the only way in.
+
+To reset it by hand anyway (e.g. right before an interview), run this from the repo root. It asks for the Neon connection string at a hidden prompt and keeps it only for that one command:
 
 ```powershell
-$env:DATABASE_URL = "<your Neon connection string>"
-python -m scripts.seed_demo --tz America/Toronto
+powershell -NoProfile -ExecutionPolicy Bypass -File backend\scripts\seed_demo_remote.ps1
 ```
 
-That creates (or resets) `demo@studyflow.app` / `studyflow-demo`, with data around the current week. Anyone can change the demo's data, so re-run the command to reset it. Close the window afterwards so the variable doesn't linger.
+(That sets the demo's password to `studyflow-demo` until the next automatic rebuild.)
 
 ## Free-tier behaviour to expect
 

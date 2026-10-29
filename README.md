@@ -4,7 +4,7 @@
 
 A full-stack productivity app for students: track courses and deadlines, focus with a Pomodoro timer that logs study time per course, and see where your week went.
 
-**[Live demo → studyflow-q3u0.onrender.com](https://studyflow-q3u0.onrender.com)** · log in as `demo@studyflow.app` / `studyflow-demo`, or register your own account.
+**[Live demo → studyflow-q3u0.onrender.com](https://studyflow-q3u0.onrender.com)** · click **Explore the demo** for a sample student account with this week's data (no sign-up), or register your own.
 <sub>Free hosting: the first visit after a quiet spell can take ~30–60 s while the server wakes up.</sub>
 
 **FastAPI · PostgreSQL · SQLAlchemy 2.0 · Alembic · React 19 · TypeScript · TanStack Query · Vite · pytest · Vitest · Docker · GitHub Actions**
@@ -21,7 +21,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 
 ## Features
 
-- **Accounts:** register and log in with JWT bearer tokens; bcrypt password hashing.
+- **Accounts:** register and log in with JWT bearer tokens; bcrypt password hashing. A one-click **demo account** rebuilds its sample data around the current week (in the visitor's time zone) whenever it's more than an hour old, so it never goes stale.
 - **Courses and assignments:** assignments, quizzes, exams, labs and projects with due dates, priority and status; filters by course, status, priority and date range, all kept in the URL.
 - **Calendar week view:** deadlines placed on the right *local* day (including across daylight-saving changes), an overdue panel, and one-click "done".
 - **Pomodoro timer:** 25/5 or 50/10 focus blocks that survive refreshes, sleep, background tabs and an expired login, and log each completed block to its course.

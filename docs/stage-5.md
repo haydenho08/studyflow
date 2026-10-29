@@ -109,3 +109,24 @@ Verified locally before creating any accounts: the container started against a *
 - `JWT_SECRET_KEY` uses `generateValue: true`: Render creates a random secret once. Nobody ever sees or types it, so it can't leak from a laptop or a chat.
 - `CORS_ORIGINS=[]`: same-origin in production, so no cross-origin access at all.
 - `autoDeployTrigger: checksPass`: a commit is deployed only after GitHub Actions passes on it, which makes CI a real gate rather than a report.
+- `DEMO_ENABLED=true`: turns on the one-click demo (below). It's off by default, so a local or test setup never exposes it by accident.
+
+## 7. A demo that never goes stale
+
+Once the site was live, it was clear what a recruiter would actually see: a login page. Most won't register just to look. And a demo account seeded once would rot: its "this week" would be weeks in the past by the time anyone clicked.
+
+**`POST /api/auth/demo`** (`app/demo.py`) logs the visitor into a shared demo account, and first rebuilds its data if it's **more than an hour old**:
+- **Relative to *today*, in the visitor's time zone** (the browser sends it). Deadlines were first anchored to Monday, which looked fine on a Wednesday and terrible on a Sunday (almost everything overdue). Anchored to today, any day shows two done, one overdue, and the rest over the next ten days; a test asserts exactly one overdue deadline.
+- **Freshness without a new column:** "when was it built?" is the oldest demo course's `created_at`. Courses a visitor adds are newer, so they don't count; a visitor deleting everything forces a rebuild.
+- **An hour, not every click:** rebuilding on every click would wipe the data out from under another visitor browsing at the same moment. Within the hour, changes stay; after it, they're cleared, so vandalism doesn't last.
+- **No password:** each rebuild sets a random password, so the button is the only way in.
+
+### The race, and proving the fix
+
+Two visitors clicking a stale demo at the same moment would both pass the "is it stale?" check, both delete the courses, and both insert new ones, and the second would crash on the `(user_id, code)` unique constraint. The fix is **`SELECT … FOR UPDATE` on the demo user's row**: the second request waits for the first transaction to commit, re-reads, sees fresh data, and skips the rebuild.
+
+The test runs two rebuilds in parallel threads, released together by a `Barrier`. The first version **passed even with the lock removed**: the rebuild was so fast that one thread finished before the other even checked. Slowing the rebuild down inside the test (a 0.3 s delay in password hashing) made the overlap certain. Now, without the lock, it fails with exactly the predicted `UniqueViolation … uq_courses_user_id_code`; with the lock, it passes. Same lesson as the UTC test above: a test that can't fail proves nothing, so check that it fails when the code is wrong.
+
+### The landing page
+
+The login page now leads with what the app is (a tagline and three features), the **Explore the demo** button, and a link to the source on GitHub; the email form sits beside it for real users. It's the same component as before, so there's still one way the app handles auth.

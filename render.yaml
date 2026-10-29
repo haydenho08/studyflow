@@ -16,3 +16,5 @@ services:
         generateValue: true # Render generates a random secret once and keeps it
       - key: CORS_ORIGINS
         value: "[]" # same-origin in production: the API serves the frontend itself
+      - key: DEMO_ENABLED
+        value: "true" # the login page's one-click "Explore the demo" (self-refreshing data)
