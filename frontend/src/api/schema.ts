@@ -379,6 +379,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Course Grades
+         * @description Every course's grade so far, its possible range, and what's needed for each letter grade.
+         *
+         *     Only deadlines with a weight count. Computed on request from the stored marks, so it can
+         *     never disagree with them.
+         */
+        get: operations["course_grades_api_grades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -402,6 +425,12 @@ export interface components {
             priority?: components["schemas"]["Priority"];
             /** @default todo */
             status?: components["schemas"]["Status"];
+            /** Weight */
+            weight?: (number | string) | null;
+            /** Score */
+            score?: number | string | null;
+            /** Out Of */
+            out_of?: number | string | null;
         };
         /**
          * AssignmentKind
@@ -428,6 +457,12 @@ export interface components {
             status: components["schemas"]["Status"];
             /** Series Id */
             series_id: string | null;
+            /** Weight */
+            weight: number | null;
+            /** Score */
+            score: number | null;
+            /** Out Of */
+            out_of: number | null;
             /**
              * Created At
              * Format: date-time
@@ -461,6 +496,12 @@ export interface components {
             priority?: components["schemas"]["Priority"];
             /** @default todo */
             status?: components["schemas"]["Status"];
+            /** Weight */
+            weight?: (number | string) | null;
+            /** Score */
+            score?: number | string | null;
+            /** Out Of */
+            out_of?: number | string | null;
             repeat: components["schemas"]["RepeatRule"];
         };
         /** AssignmentUpdate */
@@ -476,6 +517,12 @@ export interface components {
             due_at?: string | null;
             priority?: components["schemas"]["Priority"] | null;
             status?: components["schemas"]["Status"] | null;
+            /** Weight */
+            weight?: (number | string) | null;
+            /** Score */
+            score?: number | string | null;
+            /** Out Of */
+            out_of?: number | string | null;
         };
         /** Body_login_api_auth_login_post */
         Body_login_api_auth_login_post: {
@@ -520,6 +567,37 @@ export interface components {
              * @default #3B82F6
              */
             color?: string;
+        };
+        /** CourseGrades */
+        CourseGrades: {
+            /** Course Id */
+            course_id: number;
+            /**
+             * Total Weight
+             * @description Sum of the weights entered (ideally 100)
+             */
+            total_weight: number;
+            /** Graded Weight */
+            graded_weight: number;
+            /**
+             * Current
+             * @description Average on what's graded so far
+             */
+            current: number | null;
+            /** Current Letter */
+            current_letter: string | null;
+            /**
+             * Lowest
+             * @description Final grade with zero on everything left
+             */
+            lowest: number | null;
+            /**
+             * Highest
+             * @description Final grade with full marks on the rest
+             */
+            highest: number | null;
+            /** Targets */
+            targets: components["schemas"]["GradeTarget"][];
         };
         /** CourseRead */
         CourseRead: {
@@ -586,6 +664,22 @@ export interface components {
              * @default America/Toronto
              */
             tz?: string;
+        };
+        /** GradeTarget */
+        GradeTarget: {
+            /** Letter */
+            letter: string;
+            /**
+             * Minimum
+             * @description Lowest final percentage for this letter
+             */
+            minimum: number;
+            status: components["schemas"]["TargetStatus"];
+            /**
+             * Needed
+             * @description Average needed on what isn't graded yet (rounded up); null if nothing is left
+             */
+            needed: number | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -663,6 +757,11 @@ export interface components {
             /** Duration Seconds */
             readonly duration_seconds: number;
         };
+        /**
+         * TargetStatus
+         * @enum {string}
+         */
+        TargetStatus: "secured" | "possible" | "out_of_reach";
         /** Token */
         Token: {
             /** Access Token */
@@ -1585,6 +1684,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    course_grades_api_grades_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseGrades"][];
                 };
             };
         };

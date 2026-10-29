@@ -7,6 +7,7 @@ stale week, and whatever an earlier visitor typed in is cleared out within the h
 
 import datetime as dt
 import secrets
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete, func, select
@@ -42,7 +43,38 @@ ASSIGNMENTS = [
     (3, "Problem set 4", "assignment", 6, "23:59", "low", "todo"),
     (2, "Quiz 4", "quiz", 8, "10:00", "medium", "todo"),
     (0, "Midterm", "exam", 10, "18:00", "high", "todo"),
+    # Earlier in the term (already marked) and the finals, for the Grades page.
+    (0, "Lab 1: Classes", "lab", -24, "17:00", "medium", "done"),
+    (0, "Lab 2: Collections", "lab", -17, "17:00", "medium", "done"),
+    (0, "Lab 3: Recursion", "lab", -10, "17:00", "medium", "done"),
+    (0, "Final exam", "exam", 45, "09:00", "high", "todo"),
+    (1, "Quiz 1: Binary", "quiz", -20, "10:00", "medium", "done"),
+    (1, "Quiz 2: Logic gates", "quiz", -13, "10:00", "medium", "done"),
+    (1, "Midterm", "exam", -15, "19:00", "high", "done"),
+    (1, "Final exam", "exam", 48, "14:00", "high", "todo"),
 ]
+
+# Grades: (course index, title) -> (weight %, score, out of). EECS 2030 and 2021 add up to 100%;
+# MATH 1090 only has some weights entered (the page says so); PHYS 1800 has none yet.
+GRADES = {
+    (0, "Lab 1: Classes"): ("5", "9", "10"),
+    (0, "Lab 2: Collections"): ("5", "10", "10"),
+    (0, "Lab 3: Recursion"): ("5", "8", "10"),
+    (0, "Lab 4: Inheritance"): ("5", "17", "20"),
+    (0, "Lab 5: Interfaces"): ("5", None, None),
+    (0, "Project milestone 1"): ("15", None, None),
+    (0, "Midterm"): ("25", None, None),
+    (0, "Final exam"): ("35", None, None),
+    (1, "Quiz 1: Binary"): ("5", "8", "10"),
+    (1, "Quiz 2: Logic gates"): ("5", "7", "10"),
+    (1, "Quiz 3: Assembly"): ("5", None, None),
+    (1, "Midterm"): ("30", "41", "50"),
+    (1, "Lab 3 report"): ("15", None, None),
+    (1, "Final exam"): ("40", None, None),
+    (2, "Problem set 5"): ("10", "17", "20"),
+    (2, "Problem set 6"): ("10", None, None),
+    (2, "Quiz 4"): ("10", None, None),
+}
 
 # (course index, days ago, "HH:MM", minutes). Relative to today rather than to Monday, so the
 # last 14 days are always full of study whatever weekday it is.
@@ -85,6 +117,9 @@ def reset_demo_data(db: Session, user: User, zone: ZoneInfo, password: str | Non
     db.flush()
 
     for ci, title, kind, offset, hhmm, priority, status in ASSIGNMENTS:
+        weight, score, out_of = (
+            None if v is None else Decimal(v) for v in GRADES.get((ci, title), (None, None, None))
+        )
         db.add(
             Assignment(
                 course_id=courses[ci].id,
@@ -93,6 +128,9 @@ def reset_demo_data(db: Session, user: User, zone: ZoneInfo, password: str | Non
                 due_at=_at(today, offset, hhmm, zone),
                 priority=priority,
                 status=status,
+                weight=weight,
+                score=score,
+                out_of=out_of,
             )
         )
 

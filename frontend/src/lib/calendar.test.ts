@@ -16,6 +16,9 @@ function assignment(id: number, due_at: string, status: Assignment["status"] = "
     status,
     created_at: "2026-10-01T00:00:00Z",
     series_id: null,
+    weight: null,
+    score: null,
+    out_of: null,
     updated_at: "2026-10-01T00:00:00Z",
   };
 }

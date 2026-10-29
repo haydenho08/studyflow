@@ -8,6 +8,7 @@ import type {
   CalendarFeed,
   Course,
   CourseCreate,
+  CourseGrades,
   CourseUpdate,
   StudySession,
   StudySessionCreate,
@@ -70,4 +71,8 @@ export const calendarFeedApi = {
   // Turns the feed on, or swaps its secret URL for a new one.
   create: () => api<CalendarFeed>("/api/calendar-feed", { method: "POST" }),
   remove: () => api<void>("/api/calendar-feed", { method: "DELETE" }),
+};
+
+export const gradesApi = {
+  list: () => api<CourseGrades[]>("/api/grades"),
 };

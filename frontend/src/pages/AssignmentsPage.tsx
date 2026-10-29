@@ -24,6 +24,7 @@ import {
 } from "../lib/dates";
 import { changedFields, isEmpty } from "../lib/diff";
 import { readFilterParams, toApiFilters } from "../lib/filters";
+import { decimalOrNull, formatPercent } from "../lib/grades";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { KIND_LABELS, PRIORITY_LABELS, STATUS_LABELS, optionsOf } from "../lib/labels";
 import { NO_REPEAT, WEEKDAYS, describeRepeat, toRepeatRule, weekdayOf, type RepeatValues } from "../lib/recurrence";
@@ -39,6 +40,10 @@ type AssignmentFormValues = {
   due: string; // datetime-local value
   priority: Priority;
   description: string;
+  // Grade tracking, as typed: "" means not set.
+  weight: string;
+  score: string;
+  outOf: string;
 };
 
 function toPayload(values: AssignmentFormValues) {
@@ -49,8 +54,13 @@ function toPayload(values: AssignmentFormValues) {
     due_at: fromDateTimeInput(values.due),
     priority: values.priority,
     description: values.description.trim() || null,
+    weight: decimalOrNull(values.weight),
+    score: decimalOrNull(values.score),
+    out_of: decimalOrNull(values.outOf),
   };
 }
+
+const asText = (value: number | null) => (value === null ? "" : String(value));
 
 function formValuesFrom(assignment: Assignment): AssignmentFormValues {
   return {
@@ -60,6 +70,9 @@ function formValuesFrom(assignment: Assignment): AssignmentFormValues {
     due: toDateTimeInput(assignment.due_at),
     priority: assignment.priority,
     description: assignment.description ?? "",
+    weight: asText(assignment.weight),
+    score: asText(assignment.score),
+    outOf: asText(assignment.out_of),
   };
 }
 
@@ -256,6 +269,48 @@ function AssignmentForm({
           ))}
         </select>
       </label>
+      <label className="field">
+        <span>Weight (% of course)</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          min="0.01"
+          max="100"
+          step="0.01"
+          placeholder="Optional"
+          value={values.weight}
+          onChange={(e) => set("weight", e.target.value)}
+        />
+      </label>
+      {/* A series is created before anything is marked: marks are entered one deadline at a time. */}
+      {!repeat.enabled && (
+        <>
+          <label className="field">
+            <span>Mark</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="Not marked yet"
+              value={values.score}
+              onChange={(e) => set("score", e.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>Out of</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0.01"
+              step="0.01"
+              required={values.score.trim() !== ""}
+              value={values.outOf}
+              onChange={(e) => set("outOf", e.target.value)}
+            />
+          </label>
+        </>
+      )}
       <label className="field span-all">
         <span>Notes (optional)</span>
         <textarea
@@ -362,6 +417,7 @@ function AssignmentItem({ assignment, course, courses }: { assignment: Assignmen
         <div className="muted row-meta">
           <span>{course?.code}</span>
           <span>{KIND_LABELS[assignment.kind]}</span>
+          {assignment.weight !== null && <span>{formatPercent(assignment.weight)} of grade</span>}
           {inSeries && (
             <span className="repeat-tag" title="Part of a repeating series">
               <Repeat size={13} aria-hidden="true" />
@@ -489,6 +545,9 @@ export function AssignmentsPage() {
               due: defaultDueInput(),
               priority: "medium",
               description: "",
+              weight: "",
+              score: "",
+              outOf: "",
             }}
             submitLabel="Add assignment"
             repeatable
@@ -496,7 +555,8 @@ export function AssignmentsPage() {
             onSubmit={async (values, repeat) => {
               if (repeat.enabled) {
                 const rule = toRepeatRule(repeat, values.due, browserTimeZone());
-                await createSeries.mutateAsync({ ...toPayload(values), repeat: rule });
+                const series = { ...toPayload(values), score: null, out_of: null, repeat: rule };
+                await createSeries.mutateAsync(series);
               } else {
                 await createAssignment.mutateAsync(toPayload(values));
               }

@@ -1,8 +1,14 @@
 // React Query hooks: the only place that knows the cache keys and what each change invalidates.
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import { browserTimeZone } from "../lib/week";
-import { assignmentsApi, calendarFeedApi, coursesApi, studyApi } from "./endpoints";
+import { assignmentsApi, calendarFeedApi, coursesApi, gradesApi, studyApi } from "./endpoints";
 import type { AssignmentFilters, AssignmentUpdate, CourseUpdate, StudySessionFilters } from "./types";
 
 export const queryKeys = {
@@ -14,6 +20,8 @@ export const queryKeys = {
   sessions: ["study-sessions"] as const,
   sessionList: (filters: StudySessionFilters) => ["study-sessions", filters] as const,
   stats: ["stats"] as const,
+  // Worked out from the assignments' weights and marks, so every assignment change refreshes it.
+  grades: ["grades"] as const,
   weekStats: (start: string, tz: string) => ["stats", "week", start, tz] as const,
   calendarFeed: ["calendar-feed"] as const,
 };
@@ -49,8 +57,16 @@ export function useDeleteCourse() {
       queryClient.invalidateQueries({ queryKey: queryKeys.assignments });
       queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
       queryClient.invalidateQueries({ queryKey: queryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: queryKeys.grades });
     },
   });
+}
+
+function invalidateAssignments(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.grades }),
+  ]);
 }
 
 export function useAssignments(filters: AssignmentFilters) {
@@ -66,7 +82,7 @@ export function useCreateAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: assignmentsApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+    onSuccess: () => invalidateAssignments(queryClient),
   });
 }
 
@@ -74,7 +90,7 @@ export function useCreateSeries() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: assignmentsApi.createSeries,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+    onSuccess: () => invalidateAssignments(queryClient),
   });
 }
 
@@ -96,7 +112,7 @@ export function useUpdateAssignment() {
       scope === "following"
         ? assignmentsApi.updateFollowing(id, changes, browserTimeZone())
         : assignmentsApi.update(id, changes),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+    onSuccess: () => invalidateAssignments(queryClient),
   });
 }
 
@@ -105,7 +121,7 @@ export function useDeleteAssignment() {
   return useMutation({
     mutationFn: ({ id, scope = "this" }: { id: number; scope?: Scope }) =>
       scope === "following" ? assignmentsApi.removeFollowing(id) : assignmentsApi.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+    onSuccess: () => invalidateAssignments(queryClient),
   });
 }
 
@@ -162,4 +178,8 @@ export function useDeleteCalendarFeed() {
     mutationFn: calendarFeedApi.remove,
     onSuccess: () => queryClient.setQueryData(queryKeys.calendarFeed, { path: null }),
   });
+}
+
+export function useGrades() {
+  return useQuery({ queryKey: queryKeys.grades, queryFn: gradesApi.list });
 }

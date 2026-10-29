@@ -7,6 +7,7 @@ import { AssignmentsPage } from "./pages/AssignmentsPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { CoursesPage } from "./pages/CoursesPage";
+import { GradesPage } from "./pages/GradesPage";
 import { LandingPage } from "./pages/LandingPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { StatsPage } from "./pages/StatsPage";
@@ -40,6 +41,7 @@ export function App() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/grades" element={<GradesPage />} />
           <Route path="/study" element={<StudyPage />} />
           <Route path="/stats" element={<StatsPage />} />
         </Route>

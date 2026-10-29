@@ -1,9 +1,20 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, Uuid
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    Text,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, TimestampMixin
@@ -33,7 +44,14 @@ class Assignment(TimestampMixin, Base):
     __tablename__ = "assignments"
     # Covers "this course's assignments, ordered by due date";
     # also serves lookups by course_id alone.
-    __table_args__ = (Index("ix_assignments_course_id_due_at", "course_id", "due_at"),)
+    __table_args__ = (
+        Index("ix_assignments_course_id_due_at", "course_id", "due_at"),
+        # Grades: the database refuses nonsense whatever code writes it.
+        CheckConstraint("weight > 0 AND weight <= 100", name="weight_is_a_percentage"),
+        CheckConstraint("score >= 0", name="score_not_negative"),
+        CheckConstraint("out_of > 0", name="out_of_positive"),
+        CheckConstraint("(score IS NULL) = (out_of IS NULL)", name="score_has_out_of"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     # Ownership comes from the course: there is deliberately no user_id column here.
@@ -53,5 +71,10 @@ class Assignment(TimestampMixin, Base):
     # Deadlines created together as a repeating series share this id ("Lab {n}" every Friday),
     # so they can be edited or deleted "from this one onwards". None for one-off deadlines.
     series_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
+    # Grade tracking (all optional): how much of the course this is worth, and the mark you got.
+    # Numeric, not float: exact decimals, so 7.5% is stored as 7.5, not 7.4999999.
+    weight: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))  # percent of the course
+    score: Mapped[Decimal | None] = mapped_column(Numeric(7, 2))
+    out_of: Mapped[Decimal | None] = mapped_column(Numeric(7, 2))
 
     course: Mapped["Course"] = relationship(back_populates="assignments")

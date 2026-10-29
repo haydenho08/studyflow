@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import text
 
 from app.config import get_settings
-from app.demo import ASSIGNMENTS, COURSES, DEMO_EMAIL
+from app.demo import ASSIGNMENTS, COURSES, DEMO_EMAIL, GRADES
 
 
 @pytest.fixture
@@ -153,3 +153,17 @@ def test_demo_does_not_touch_real_users(client, demo_on, alice, make_course):
     course = make_course(alice)
     demo_headers(client)
     assert client.get(f"/api/courses/{course['id']}", headers=alice).status_code == 200
+
+
+def test_every_demo_grade_belongs_to_a_real_deadline():
+    titles = {(ci, title) for ci, title, *_ in ASSIGNMENTS}
+    assert set(GRADES) <= titles
+
+
+def test_the_demo_has_grades_to_show(client, demo_on):
+    grades = {
+        g["course_id"]: g for g in client.get("/api/grades", headers=demo_headers(client)).json()
+    }
+    totals = sorted(g["total_weight"] for g in grades.values())
+    assert totals == [0, 30, 100, 100]  # two complete courses, one half set up, one with none
+    assert all(g["current"] is not None for g in grades.values() if g["total_weight"])

@@ -1370,6 +1370,37 @@
           }
         }
       }
+    },
+    "/api/grades": {
+      "get": {
+        "tags": [
+          "grades"
+        ],
+        "summary": "Course Grades",
+        "description": "Every course's grade so far, its possible range, and what's needed for each letter grade.\n\nOnly deadlines with a weight count. Computed on request from the stored marks, so it can\nnever disagree with them.",
+        "operationId": "course_grades_api_grades_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseGrades"
+                  },
+                  "type": "array",
+                  "title": "Response Course Grades Api Grades Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1414,6 +1445,57 @@
           "status": {
             "$ref": "#/components/schemas/Status",
             "default": "todo"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "maximum": 100.0,
+                    "exclusiveMinimum": 0.0
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "% of the course"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "out_of": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of"
           }
         },
         "additionalProperties": false,
@@ -1487,6 +1569,39 @@
             ],
             "title": "Series Id"
           },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "out_of": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1509,6 +1624,9 @@
           "priority",
           "status",
           "series_id",
+          "weight",
+          "score",
+          "out_of",
           "created_at",
           "updated_at"
         ],
@@ -1554,6 +1672,57 @@
           "status": {
             "$ref": "#/components/schemas/Status",
             "default": "todo"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "maximum": 100.0,
+                    "exclusiveMinimum": 0.0
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "% of the course"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "out_of": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of"
           },
           "repeat": {
             "$ref": "#/components/schemas/RepeatRule"
@@ -1649,6 +1818,57 @@
                 "type": "null"
               }
             ]
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "maximum": 100.0,
+                    "exclusiveMinimum": 0.0
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "% of the course"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "out_of": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of"
           }
         },
         "additionalProperties": false,
@@ -1763,6 +1983,89 @@
           "code"
         ],
         "title": "CourseCreate"
+      },
+      "CourseGrades": {
+        "properties": {
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "total_weight": {
+            "type": "number",
+            "title": "Total Weight",
+            "description": "Sum of the weights entered (ideally 100)"
+          },
+          "graded_weight": {
+            "type": "number",
+            "title": "Graded Weight"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current",
+            "description": "Average on what's graded so far"
+          },
+          "current_letter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Letter"
+          },
+          "lowest": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lowest",
+            "description": "Final grade with zero on everything left"
+          },
+          "highest": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest",
+            "description": "Final grade with full marks on the rest"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/GradeTarget"
+            },
+            "type": "array",
+            "title": "Targets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "total_weight",
+          "graded_weight",
+          "current",
+          "current_letter",
+          "lowest",
+          "highest",
+          "targets"
+        ],
+        "title": "CourseGrades"
       },
       "CourseRead": {
         "properties": {
@@ -1930,6 +2233,42 @@
         "type": "object",
         "title": "DemoLogin"
       },
+      "GradeTarget": {
+        "properties": {
+          "letter": {
+            "type": "string",
+            "title": "Letter"
+          },
+          "minimum": {
+            "type": "number",
+            "title": "Minimum",
+            "description": "Lowest final percentage for this letter"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TargetStatus"
+          },
+          "needed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needed",
+            "description": "Average needed on what isn't graded yet (rounded up); null if nothing is left"
+          }
+        },
+        "type": "object",
+        "required": [
+          "letter",
+          "minimum",
+          "status",
+          "needed"
+        ],
+        "title": "GradeTarget"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2090,6 +2429,15 @@
           "duration_seconds"
         ],
         "title": "StudySessionRead"
+      },
+      "TargetStatus": {
+        "type": "string",
+        "enum": [
+          "secured",
+          "possible",
+          "out_of_reach"
+        ],
+        "title": "TargetStatus"
       },
       "Token": {
         "properties": {

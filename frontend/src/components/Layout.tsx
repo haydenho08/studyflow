@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChevronDown,
   CircleUser,
+  GraduationCap,
   ListChecks,
   LogOut,
   MonitorSmartphone,
@@ -23,6 +24,7 @@ const NAV = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/assignments", label: "Assignments", icon: ListChecks },
   { to: "/courses", label: "Courses", icon: BookOpen },
+  { to: "/grades", label: "Grades", icon: GraduationCap },
   { to: "/study", label: "Study", icon: Timer },
   { to: "/stats", label: "Stats", icon: BarChart3 },
 ];

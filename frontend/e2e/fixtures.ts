@@ -35,8 +35,8 @@ export function apiAs(request: APIRequestContext, account: Account) {
       expect(response.status()).toBe(201);
       return (await response.json()) as { id: number; code: string };
     },
-    async createAssignment(courseId: number, title: string, dueAt: Date) {
-      const data = { course_id: courseId, title, due_at: dueAt.toISOString() };
+    async createAssignment(courseId: number, title: string, dueAt: Date, extra: Record<string, unknown> = {}) {
+      const data = { course_id: courseId, title, due_at: dueAt.toISOString(), ...extra };
       const response = await request.post("/api/assignments", { headers, data });
       expect(response.status()).toBe(201);
       return (await response.json()) as { id: number };

@@ -129,9 +129,9 @@ def update_following(
     zone = parse_timezone(tz)
     assignment = get_owned_assignment(db, user, assignment_id)
     changes = payload.model_dump(exclude_unset=True)
-    if "status" in changes:
+    if {"status", "score", "out_of"} & changes.keys():
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_CONTENT, "Status is set one deadline at a time"
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Status and marks are set one deadline at a time"
         )
     if "course_id" in changes:
         get_owned_course(db, user, changes["course_id"])
@@ -169,6 +169,12 @@ def update_assignment(
         get_owned_course(db, user, changes["course_id"])
     for field, value in changes.items():
         setattr(assignment, field, value)
+    if (assignment.score is None) != (assignment.out_of is None):
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "A mark needs both a score and what it's out of (e.g. 18 out of 20)",
+        )
     db.commit()
     db.refresh(assignment)
     return assignment

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.frontend import mount_frontend
-from app.routers import assignments, auth, calendar, courses, stats, study_sessions
+from app.routers import assignments, auth, calendar, courses, grades, stats, study_sessions
 
 
 def create_app(static_dir: Path | None = None) -> FastAPI:
@@ -35,6 +35,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
     api.include_router(study_sessions.router)
     api.include_router(stats.router)
     api.include_router(calendar.router)
+    api.include_router(grades.router)
     app.include_router(api)
 
     # In production the container ships the built frontend; in development Vite serves it.
