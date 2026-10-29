@@ -4,6 +4,9 @@
 
 A full-stack productivity app for students: track courses and deadlines, focus with a Pomodoro timer that logs study time per course, and see where your week went.
 
+**[Live demo → studyflow-q3u0.onrender.com](https://studyflow-q3u0.onrender.com)** · log in as `demo@studyflow.app` / `studyflow-demo`, or register your own account.
+<sub>Free hosting: the first visit after a quiet spell can take ~30–60 s while the server wakes up.</sub>
+
 **FastAPI · PostgreSQL · SQLAlchemy 2.0 · Alembic · React 19 · TypeScript · TanStack Query · Vite · pytest · Vitest · Docker · GitHub Actions**
 
 ![Calendar week view with an overdue panel, deadlines by day, exams highlighted](docs/screenshots/calendar.png)
@@ -90,9 +93,12 @@ frontend/  React + TypeScript SPA (pages, typed API client + query hooks, pure l
 docs/      Stage-by-stage design walkthroughs and screenshots
 ```
 
+## Deployment
+
+One multi-stage Docker image (FastAPI serving the API *and* the built React app) runs on Render, with PostgreSQL on Neon. A commit is deployed only after CI passes on it, and migrations run when the container starts. See [docs/deployment.md](docs/deployment.md).
+
 ## Roadmap
 
-- Live demo (deployment is set up: see [docs/deployment.md](docs/deployment.md))
 - Playwright end-to-end tests in CI
 - `.ics` calendar feed (per-user secret URL) for Google/Apple Calendar
 - Refresh tokens / httpOnly cookie auth
