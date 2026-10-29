@@ -1,5 +1,8 @@
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 from functools import cache
+from typing import NamedTuple
 
 import bcrypt
 import jwt
@@ -32,19 +35,25 @@ def dummy_password_hash() -> str:
     return hash_password("not-a-real-password")
 
 
-def create_access_token(user_id: int) -> str:
+class AccessClaims(NamedTuple):
+    user_id: int
+    session_id: int
+
+
+def create_access_token(user_id: int, session_id: int) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),  # JWT spec: "sub" is a string
+        "sid": session_id,  # the login it belongs to, so logging out revokes it at once
         "iat": now,
         "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
-def decode_access_token(token: str) -> int | None:
-    """Return the user id from a valid token, or None if it is invalid, tampered with or expired."""
+def decode_access_token(token: str) -> AccessClaims | None:
+    """Return who a token is for, or None if it is invalid, tampered with or expired."""
     settings = get_settings()
     try:
         payload = jwt.decode(
@@ -52,8 +61,18 @@ def decode_access_token(token: str) -> int | None:
             settings.jwt_secret_key,
             # Pin the algorithm: never let the token's own header choose it (e.g. "none").
             algorithms=[settings.jwt_algorithm],
-            options={"require": ["exp", "sub"]},
+            options={"require": ["exp", "sub", "sid"]},
         )
-        return int(payload["sub"])
-    except (jwt.InvalidTokenError, ValueError):
+        return AccessClaims(int(payload["sub"]), int(payload["sid"]))
+    except (jwt.InvalidTokenError, ValueError, TypeError):
         return None
+
+
+def new_refresh_token() -> str:
+    return secrets.token_urlsafe(32)  # 256 bits from the OS's secure random source
+
+
+def hash_refresh_token(token: str) -> str:
+    """SHA-256, not bcrypt: bcrypt is slow to make guessing *weak* passwords expensive, but a
+    256-bit random token can't be guessed anyway, and every refresh has to look one up."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

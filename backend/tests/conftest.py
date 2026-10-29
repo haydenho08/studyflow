@@ -63,7 +63,9 @@ def client() -> Iterator[TestClient]:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    # https: the refresh cookie is Secure, and the test client (like a browser) won't send a
+    # Secure cookie over plain http.
+    with TestClient(app, base_url="https://testserver") as test_client:
         yield test_client
     app.dependency_overrides.clear()
 

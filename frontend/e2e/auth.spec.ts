@@ -16,7 +16,8 @@ test("a visitor signs up from the front page and lands on their calendar @phone"
   await expect(page.getByRole("heading", { name: "Calendar" })).toBeVisible();
   await expect(page.getByText("No deadlines this week.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Log out" }).click();
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
 

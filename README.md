@@ -21,7 +21,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 
 ## Features
 
-- **Accounts:** register and log in with JWT bearer tokens; bcrypt password hashing. A one-click **demo account** rebuilds its sample data around the current week (in the visitor's time zone) whenever it's more than an hour old, so it never goes stale.
+- **Accounts:** register and log in with bcrypt-hashed passwords. Logins stay signed in through a rotating refresh token in an httpOnly cookie, with **Log out everywhere** for a lost device. A one-click **demo account** rebuilds its sample data around the current week (in the visitor's time zone) whenever it's more than an hour old, so it never goes stale.
 - **Courses and assignments:** assignments, quizzes, exams, labs and projects with due dates, priority and status; filters by course, status, priority and date range, all kept in the URL.
 - **Calendar week view:** deadlines placed on the right *local* day (including across daylight-saving changes), an overdue panel, and one-click "done".
 - **Pomodoro timer:** 25/5 or 50/10 focus blocks that survive refreshes, sleep, background tabs and an expired login, and log each completed block to its course.
@@ -40,14 +40,15 @@ Each stage has a written walkthrough of the design decisions in [`docs/`](docs/)
 - **A timer that can't drift.** It stores *when it started* and derives the remaining time, so it's correct through background-tab throttling and sleep. Transitions are idempotent, so StrictMode, two tabs or a retry can't log a block twice. ([Stage 3](docs/stage-3.md))
 - **Accessible charts.** Hand-built SVG with a colour-blind-validated palette (separate dark-mode steps), legend, keyboard-focusable tooltips, and a table view. Colour is never the only cue. ([Stage 3](docs/stage-3.md))
 - **A calendar feed secured by its URL.** Calendar apps can't log in, so the feed URL carries a 256-bit random token that can be replaced or switched off at any time, and is separate from the login token. Unknown tokens get a 404. The iCalendar output (escaping, CRLF, folding long lines at 75 *bytes*) is hand-written and unit-tested. ([Stage 6](docs/stage-6.md))
-- **Tested in a real browser.** Playwright runs 12 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed), two of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
+- **Login that can't be lifted out of storage.** A 15-minute access token held only in memory, plus a refresh token in an `HttpOnly; Secure; SameSite=Strict` cookie that rotates on every use. Reusing an old one is treated as theft and ends the session. Access tokens name their session, so logging out takes effect immediately. CSRF is covered by SameSite plus an Origin check. ([Stage 7](docs/stage-7.md))
+- **Tested in a real browser.** Playwright runs 18 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed, silent token refresh, logging out across tabs and devices), three of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
 - **Database integrity, not just app checks:** foreign keys with `ON DELETE CASCADE`, `CHECK` constraints for enums and session times, and reversible Alembic migrations tested both ways in CI.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    B["React SPA<br/>(TypeScript, TanStack Query)"] -- "/api/* (JSON, Bearer JWT)" --> A["FastAPI<br/>(Pydantic v2)"]
+    B["React SPA<br/>(TypeScript, TanStack Query)"] -- "/api/* (JSON, Bearer JWT;<br/>refresh token in httpOnly cookie)" --> A["FastAPI<br/>(Pydantic v2)"]
     A -- "SQLAlchemy 2.0" --> D[("PostgreSQL 16")]
     O["openapi.json"] -. "npm run gen:api" .-> B
     A -. "scripts.export_openapi" .-> O
@@ -59,9 +60,9 @@ In development, Vite proxies `/api` to FastAPI, so the browser sees a single ori
 
 | | |
 |---|---|
-| **Backend** | 141 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed |
+| **Backend** | 177 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF |
 | **Frontend** | 63 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection |
-| **End-to-end** | 12 Playwright tests in a real browser (two also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle |
+| **End-to-end** | 18 Playwright tests in a real browser (three also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle, staying logged in safely and logging out everywhere |
 | **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, all three test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
 
 ## Running locally
@@ -104,7 +105,6 @@ One multi-stage Docker image (FastAPI serving the API *and* the built React app)
 
 ## Roadmap
 
-- Refresh tokens / httpOnly cookie auth
 - Email reminders the day before a deadline
 - Recurring assignments (a weekly lab)
 

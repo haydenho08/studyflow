@@ -44,16 +44,17 @@ export function apiAs(request: APIRequestContext, account: Account) {
   };
 }
 
-/** Start the page logged in as `account`, the way the app stores its session. */
-export async function logInPage(page: Page, account: Account) {
-  await page.addInitScript((token) => localStorage.setItem("studyflow.token", token), account.token);
+/** Start the page logged in, the way a returning user is: the login's httpOnly refresh cookie
+ *  is already in the browser (page.request shares its cookies), plus the "logged in" hint. */
+export async function signUpInPage(page: Page): Promise<Account> {
+  const account = await signUpViaApi(page.request);
+  await page.addInitScript(() => localStorage.setItem("studyflow.session", "1"));
+  return account;
 }
 
 export const test = base.extend<{ account: Account; api: ReturnType<typeof apiAs> }>({
-  account: async ({ request, page }, use) => {
-    const account = await signUpViaApi(request);
-    await logInPage(page, account);
-    await use(account);
+  account: async ({ page }, use) => {
+    await use(await signUpInPage(page));
   },
   api: async ({ request, account }, use) => {
     await use(apiAs(request, account));

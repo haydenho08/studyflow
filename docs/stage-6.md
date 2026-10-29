@@ -63,7 +63,7 @@ Unit tests cover the logic, and API tests cover the backend. Neither shows that 
 
 ### Independent tests
 
-Every test **signs up its own fresh account** (`e2e/fixtures.ts`). So tests run in parallel (8 workers), in any order, against any database, with no cleanup step. Only the sign-up test signs up through the UI; the rest sign up through the API and put the token into `localStorage` before the page loads, so each test spends its time on what it's actually testing.
+Every test **signs up its own fresh account** (`e2e/fixtures.ts`). So tests run in parallel (8 workers), in any order, against any database, with no cleanup step. Only the sign-up test signs up through the UI; the rest sign up through the API before the page loads, so each test spends its time on what it's actually testing. (Since [Stage 7](stage-7.md), that means the login's refresh cookie is already in the browser, as for a returning user.)
 
 ### What they cover
 

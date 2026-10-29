@@ -23,6 +23,10 @@ export const authApi = {
   login: (email: string, password: string) =>
     api<Token>("/api/auth/login", { method: "POST", form: { username: email, password } }),
   me: () => api<User>("/api/auth/me"),
+  // Ends this device's login (the server reads the refresh cookie).
+  logout: () => api<void>("/api/auth/logout", { method: "POST" }),
+  // Ends every login this account has, on every device.
+  logoutEverywhere: () => api<void>("/api/auth/logout-all", { method: "POST" }),
   // One-click demo; `tz` makes the demo's "this week" the visitor's week.
   demo: (tz: string) => api<Token>("/api/auth/demo", { method: "POST", json: { tz } }),
 };

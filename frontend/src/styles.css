@@ -184,6 +184,69 @@ a {
   gap: 0.75rem;
 }
 
+.account-button {
+  gap: 0.4rem;
+  max-width: 18rem;
+}
+
+.account-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The account menu: a native popover, so it sits in the top layer, pinned under the top bar. */
+.menu {
+  position: fixed;
+  inset: auto;
+  top: 3.6rem;
+  right: 1rem;
+  margin: 0;
+  width: min(calc(100% - 2rem), 17rem);
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+}
+
+.menu-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0 0 0.3rem;
+  padding: 0.5rem 0.6rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--surface-2);
+}
+
+.menu-error {
+  margin: 0.3rem 0.6rem 0.4rem;
+}
+
 .content {
   max-width: 960px;
   margin: 0 auto;
@@ -908,9 +971,11 @@ select.status-select.status-done {
     gap: 0.75rem;
     padding: 0.6rem 1rem;
   }
-  .account-email,
-  .logout-label {
+  .account-email {
     display: none;
+  }
+  .menu {
+    top: 3.4rem;
   }
   /* Phones: the nav becomes a fixed bottom tab bar (icon over label), like a native app. */
   .nav {

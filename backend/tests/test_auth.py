@@ -93,12 +93,18 @@ def test_me_rejects_missing_or_invalid_token(client, headers):
     assert response.headers["www-authenticate"] == "Bearer"
 
 
+def live_claims(client) -> dict:
+    """The claims of a real, live login, for forging variations of it."""
+    register(client)
+    return jwt.decode(login(client).json()["access_token"], options={"verify_signature": False})
+
+
 def test_me_rejects_expired_token(client):
-    user_id = register(client).json()["id"]
+    claims = live_claims(client)
     settings = get_settings()
     past = datetime.now(UTC) - timedelta(hours=2)
     expired = jwt.encode(
-        {"sub": str(user_id), "iat": past, "exp": past + timedelta(minutes=1)},
+        {**claims, "iat": past, "exp": past + timedelta(minutes=1)},
         settings.jwt_secret_key,
         algorithm=settings.jwt_algorithm,
     )
@@ -110,9 +116,8 @@ def test_me_rejects_expired_token(client):
 
 
 def test_me_rejects_token_signed_with_another_key(client):
-    user_id = register(client).json()["id"]
     forged = jwt.encode(
-        {"sub": str(user_id), "exp": datetime.now(UTC) + timedelta(hours=1)},
+        live_claims(client),
         "an-attacker-chosen-secret-key-of-32-chars",
         algorithm="HS256",
     )
@@ -122,8 +127,8 @@ def test_me_rejects_token_signed_with_another_key(client):
     )
 
 
-def test_me_rejects_token_for_deleted_user(client):
-    token = create_access_token(user_id=999_999)
+def test_me_rejects_token_for_unknown_session(client):
+    token = create_access_token(user_id=1, session_id=999_999)
     assert (
         client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
     )

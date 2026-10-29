@@ -69,6 +69,8 @@ Genuinely *client* state (is the edit form open? what's typed in the input?) sta
 
 We chose localStorage for simplicity and are explicit about the trade-off: if an attacker can run JavaScript on our page, they can read the token. Our mitigation is not having XSS: React escapes everything it renders, and we never use `dangerouslySetInnerHTML`. The production upgrade is an httpOnly, `SameSite=Strict` cookie set by the API.
 
+> **Update:** [Stage 7](stage-7.md) made that upgrade: the access token now lives only in memory, and a rotating refresh token sits in an httpOnly cookie. `auth/token.ts` became `auth/session.ts`.
+
 ### The flow
 
 - **Login** (`AuthContext.login`) posts the OAuth2 form, stores the token, and the app re-renders. `AuthPage` sees `isAuthenticated` and renders `<Navigate>`, so there's no imperative "redirect after login" code to forget.

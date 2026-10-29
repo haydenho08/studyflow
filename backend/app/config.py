@@ -28,7 +28,12 @@ class Settings(BaseSettings):
     # No default: the app refuses to start without a secret instead of using a guessable one.
     jwt_secret_key: str = Field(min_length=32)
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = Field(default=60, gt=0)
+    # Short-lived: the app swaps its refresh cookie for a new one whenever this runs out.
+    access_token_expire_minutes: int = Field(default=15, gt=0)
+    # A login lasts this long without being used (each refresh restarts the clock).
+    refresh_token_expire_days: int = Field(default=30, gt=0)
+    # Browsers accept Secure cookies on http://localhost, so this can stay on in development too.
+    auth_cookie_secure: bool = True
 
     # bcrypt work factor. Each +1 doubles hashing time; tests lower it to stay fast.
     bcrypt_rounds: int = Field(default=12, ge=4, le=16)

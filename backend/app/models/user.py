@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.auth_session import AuthSession
     from app.models.course import Course
 
 
@@ -23,5 +24,8 @@ class User(TimestampMixin, Base):
 
     # passive_deletes: let the database's ON DELETE CASCADE remove children instead of the ORM.
     courses: Mapped[list["Course"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+    sessions: Mapped[list["AuthSession"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )

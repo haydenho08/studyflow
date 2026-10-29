@@ -15,7 +15,8 @@ import { TimerProvider } from "./timer/TimerContext";
 
 /** The front page for visitors; logged-in users go straight to their calendar. */
 function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null; // restoring a login: about to redirect, don't flash the landing page
   return isAuthenticated ? <Navigate to="/calendar" replace /> : <LandingPage />;
 }
 
