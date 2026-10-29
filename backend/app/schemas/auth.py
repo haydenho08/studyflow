@@ -35,3 +35,10 @@ class UserRead(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class DemoLogin(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The visitor's IANA time zone, so "this week" in the demo data is *their* week.
+    tz: str = Field(default="America/Toronto", max_length=64)

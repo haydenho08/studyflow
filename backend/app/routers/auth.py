@@ -1,14 +1,17 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.config import get_settings
+from app.demo import ensure_fresh_demo
 from app.deps import CurrentUser, DbSession
 from app.models import User
-from app.schemas.auth import Token, UserCreate, UserRead
+from app.schemas.auth import DemoLogin, Token, UserCreate, UserRead
 from app.security import create_access_token, dummy_password_hash, hash_password, verify_password
+from app.zones import parse_timezone
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -40,6 +43,17 @@ def login(form: Annotated[OAuth2PasswordRequestForm, Depends()], db: DbSession) 
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return Token(access_token=create_access_token(user.id))
+
+
+@router.post("/demo", response_model=Token)
+def demo_login(db: DbSession, payload: Annotated[DemoLogin | None, Body()] = None) -> Token:
+    """Log in as the shared demo account, rebuilding its data first if it's over an hour old."""
+    if not get_settings().demo_enabled:
+        # Behave exactly like a route that doesn't exist.
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
+    zone = parse_timezone((payload or DemoLogin()).tz)
+    user = ensure_fresh_demo(db, zone)
     return Token(access_token=create_access_token(user.id))
 
 

@@ -1,25 +1,16 @@
 import datetime as dt
 from collections import defaultdict
 from typing import Annotated
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query
 from sqlalchemy import Date, cast, func, select
 
 from app.deps import CurrentUser, DbSession
 from app.models import Course, StudySession
 from app.schemas.study import CourseSeconds, CourseTotal, DayStats, WeekStats
+from app.zones import parse_timezone
 
 router = APIRouter(prefix="/stats", tags=["stats"])
-
-
-def parse_timezone(name: str) -> ZoneInfo:
-    try:
-        return ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown time zone: {name!r}"
-        ) from None
 
 
 @router.get("/week", response_model=WeekStats)

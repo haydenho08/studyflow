@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Built frontend to serve (frontend/dist). Unset in development, where Vite serves it.
     static_dir: Path | None = None
 
+    # One-click public demo login (POST /api/auth/demo). Off unless a deployment turns it on.
+    demo_enabled: bool = False
+
     @field_validator("database_url", "test_database_url")
     @classmethod
     def use_psycopg_driver(cls, url: str) -> str:
