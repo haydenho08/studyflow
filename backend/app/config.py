@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_username: str | None = None
     smtp_password: str | None = None
+    # Limits on login attempts, sign-ups and reset emails (app/ratelimit.py). The browser tests
+    # switch them off: they sign up dozens of accounts from one address.
+    rate_limit_enabled: bool = True
+
     # The site's address, for links in emails (https://studyflow-q3u0.onrender.com). Unset: the
     # address the request came in on.
     public_url: str | None = None

@@ -56,6 +56,15 @@ In Render → the service → **Environment**, add:
 
 Save, and Render redeploys. `GET /api/config` then says `"email_enabled": true`, and the links appear. If sending fails, the app logs the error and carries on; the person sees the same "we've sent a link" message either way.
 
+## 5. Rate limits (automatic)
+
+Login lockout and the other limits (see [Stage 12](stage-12.md)) are on by default (`RATE_LIMIT_ENABLED=true`), and the counters are stored in the database, so a redeploy doesn't reset them. Nothing to configure. To let someone back in early, wait out the window (15 minutes for logins), or delete their counter in Neon's SQL editor. Keys are hashed, so hash the same way:
+
+```sql
+DELETE FROM rate_limit_counters
+WHERE key = encode(sha256(convert_to('login-account:' || lower('alice@example.com'), 'UTF8')), 'hex');
+```
+
 ## Free-tier behaviour to expect
 
 - Render's free web services **sleep when idle**; the first request afterwards takes a while (cold start). Mention it next to the link ("may take ~30 s to wake up").

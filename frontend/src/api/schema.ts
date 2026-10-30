@@ -247,7 +247,7 @@ export interface paths {
         /**
          * Request Password Reset
          * @description Email a reset link. The answer is the same whether or not the account exists, so this
-         *     can't be used to find out who has one.
+         *     can't be used to find out who has one (the limits, too, apply to any address).
          */
         post: operations["request_password_reset_api_account_password_reset_post"];
         delete?: never;

@@ -47,6 +47,7 @@ Each stage has a written walkthrough of the design decisions in [`docs/`](docs/)
 - **Grades in exact decimals.** `NUMERIC` columns, `Decimal` maths and typed input sent as strings, so nothing passes through a float. Rounding is always cautious: grades round down, "needed" rounds up. The same rules are enforced by Pydantic and by Postgres `CHECK` constraints. ([Stage 9](docs/stage-9.md))
 - **Shared data, personal progress.** Deadlines belong to the course, but status and marks live in a per-person `assignment_progress` table (no row means "to do"), and study sessions carry who studied. The migration copies existing data across instead of dropping it, and was checked row for row in both directions. ([Stage 10](docs/stage-10.md))
 - **Account flows done carefully.** Emailed links are single-use, expire, are stored only as hashes, and carry their token in the URL fragment so it never reaches a server log. Password reset doesn't reveal who has an account, and email goes out after the response. Email providers are pluggable (`none` / `console` / `file` / `smtp`), and features that need email hide themselves when it's off. ([Stage 11](docs/stage-11.md))
+- **Rate limits that don't leak.** Login lockout per account and per IP, plus limits on sign-ups, reset emails and Settings password checks. Counters are atomic Postgres upserts (they survive restarts and work across instances) with hashed keys. A lockout is checked before bcrypt, looks the same for accounts that don't exist, and never ends logins you already have. ([Stage 12](docs/stage-12.md))
 - **Tested in a real browser.** Playwright runs 26 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed, silent token refresh, logging out across tabs and devices, a repeating lab series, grades, sharing a course with a classmate who signs up from the invite, password reset through the emailed link), three of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
 - **Database integrity, not just app checks:** foreign keys with `ON DELETE CASCADE`, `CHECK` constraints for enums and session times, and reversible Alembic migrations tested both ways in CI.
 
@@ -66,7 +67,7 @@ In development, Vite proxies `/api` to FastAPI, so the browser sees a single ori
 
 | | |
 |---|---|
-| **Backend** | 328 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF, weekly recurrence across DST, exact grade maths and its rounding, shared courses (owner, member, outsider), password reset and account changes |
+| **Backend** | 349 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF, weekly recurrence across DST, exact grade maths and its rounding, shared courses (owner, member, outsider), password reset and account changes, rate limits and lockout |
 | **Frontend** | 87 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection, repeat rules, grade wording, emailed-link tokens |
 | **End-to-end** | 26 Playwright tests in a real browser (three also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle, staying logged in safely and logging out everywhere, a repeating series, weights and marks to a grade, sharing and leaving a course, forgot password, settings, deleting an account |
 | **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, all three test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
@@ -111,7 +112,6 @@ One multi-stage Docker image (FastAPI serving the API *and* the built React app)
 
 ## Roadmap
 
-- Rate limiting and lockout on repeated failed logins
 - Email reminders the day before a deadline
 
 ## License

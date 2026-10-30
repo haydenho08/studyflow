@@ -50,6 +50,9 @@ export default defineConfig({
           // Emails become files the tests can read (password reset, email change).
           MAIL_BACKEND: "file",
           MAIL_OUTBOX_DIR: OUTBOX_DIR,
+          // Every test signs up its own account, all from 127.0.0.1: far past the per-address
+          // sign-up limit. The limits themselves are covered by backend/tests/test_ratelimit.py.
+          RATE_LIMIT_ENABLED: "false",
         },
       },
 });

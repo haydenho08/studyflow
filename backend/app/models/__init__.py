@@ -6,6 +6,7 @@ from app.models.course import Course
 from app.models.course_member import CourseMember
 from app.models.email_token import EmailToken, EmailTokenPurpose
 from app.models.enums import AssignmentKind, Priority, Status
+from app.models.rate_limit import RateLimitCounter
 from app.models.study_session import StudySession
 from app.models.user import User
 
@@ -19,6 +20,7 @@ __all__ = [
     "EmailToken",
     "EmailTokenPurpose",
     "Priority",
+    "RateLimitCounter",
     "Status",
     "StudySession",
     "User",

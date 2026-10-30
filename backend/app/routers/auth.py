@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Body, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -10,6 +10,16 @@ from app.config import get_settings
 from app.demo import ensure_fresh_demo
 from app.deps import CurrentUser, DbSession, SameOrigin
 from app.models import User
+from app.ratelimit import (
+    LOGIN_FAILURES_PER_ACCOUNT,
+    LOGIN_FAILURES_PER_IP,
+    SIGN_UPS_PER_IP,
+    check,
+    clear,
+    client_ip,
+    consume,
+    record_failure,
+)
 from app.schemas.auth import DemoLogin, Token, UserCreate, UserRead
 from app.security import dummy_password_hash, hash_password, verify_password
 from app.sessions import (
@@ -57,7 +67,8 @@ def clear_refresh_cookie(response: Response) -> None:
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate, db: DbSession) -> User:
+def register(payload: UserCreate, db: DbSession, request: Request) -> User:
+    consume(db, SIGN_UPS_PER_IP, client_ip(request))
     user = User(email=payload.email, hashed_password=hash_password(payload.password))
     db.add(user)
     try:
@@ -71,20 +82,31 @@ def register(payload: UserCreate, db: DbSession) -> User:
 
 @router.post("/login", response_model=Token, dependencies=[SameOrigin])
 def login(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()], db: DbSession, response: Response
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: DbSession,
+    request: Request,
+    response: Response,
 ) -> Token:
     # OAuth2's password flow calls the field "username"; for us it holds the email.
     email = form.username.strip().lower()
+    ip = client_ip(request)
+    # Locked out? Checked before bcrypt, so a flood of guesses doesn't cost the server a hash
+    # each. Keyed on the email typed, whether or not it's an account, so it reveals nothing.
+    check(db, LOGIN_FAILURES_PER_ACCOUNT, email)
+    check(db, LOGIN_FAILURES_PER_IP, ip)
     user = db.scalar(select(User).where(User.email == email))
     hashed = user.hashed_password if user else dummy_password_hash()
     password_ok = verify_password(form.password, hashed)
     if user is None or not password_ok:
+        record_failure(db, LOGIN_FAILURES_PER_ACCOUNT, email)
+        record_failure(db, LOGIN_FAILURES_PER_IP, ip)
         # Same message for "no such user" and "wrong password": don't reveal which emails exist.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    clear(db, LOGIN_FAILURES_PER_ACCOUNT, email)  # committed with the new session
     return _issue(response, start_session(db, user))
 
 

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.demo import DEMO_EMAIL
@@ -12,6 +13,16 @@ from app.deps import CurrentSession, CurrentUser, DbSession
 from app.email_tokens import issue, spend, spend_all
 from app.mail import send_mail
 from app.models import AuthSession, EmailTokenPurpose, User
+from app.ratelimit import (
+    EMAIL_CHANGES_PER_USER,
+    PASSWORD_CHECKS_PER_USER,
+    RESETS_PER_EMAIL,
+    RESETS_PER_IP,
+    check,
+    client_ip,
+    consume,
+    record_failure,
+)
 from app.routers.auth import clear_refresh_cookie
 from app.schemas.auth import (
     AccountDelete,
@@ -41,8 +52,12 @@ def _not_the_demo(user: User) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "The demo account can't be changed")
 
 
-def _check_password(user: User, password: str) -> None:
+def _check_password(db: Session, user: User, password: str) -> None:
+    """403 for a wrong password, and only a few tries: someone holding a stolen, logged-in
+    session mustn't be able to guess the password through these forms."""
+    check(db, PASSWORD_CHECKS_PER_USER, str(user.id))
     if not verify_password(password, user.hashed_password):
+        record_failure(db, PASSWORD_CHECKS_PER_USER, str(user.id))
         raise HTTPException(status.HTTP_403_FORBIDDEN, "That isn't your current password")
 
 
@@ -58,7 +73,7 @@ def change_password(payload: PasswordChange, db: DbSession, session: CurrentSess
     """New password. Every *other* login is ended (this device stays in), as are any reset links."""
     user = session.user
     _not_the_demo(user)
-    _check_password(user, payload.current_password)
+    _check_password(db, user, payload.current_password)
     user.hashed_password = hash_password(payload.new_password)
     db.execute(
         update(AuthSession)
@@ -84,7 +99,8 @@ def change_email(
     """Send a confirmation link to the new address. Nothing changes until it's clicked."""
     _require_email()
     _not_the_demo(user)
-    _check_password(user, payload.password)
+    _check_password(db, user, payload.password)
+    consume(db, EMAIL_CHANGES_PER_USER, str(user.id))
     if payload.new_email == user.email:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "That's already your email")
     if db.scalar(select(User.id).where(User.email == payload.new_email)) is not None:
@@ -135,8 +151,10 @@ def request_password_reset(
     background: BackgroundTasks,
 ) -> dict[str, str]:
     """Email a reset link. The answer is the same whether or not the account exists, so this
-    can't be used to find out who has one."""
+    can't be used to find out who has one (the limits, too, apply to any address)."""
     _require_email()
+    consume(db, RESETS_PER_IP, client_ip(request))
+    consume(db, RESETS_PER_EMAIL, payload.email)
     user = db.scalar(select(User).where(User.email == payload.email))
     if user is not None and user.email != DEMO_EMAIL:
         token = issue(db, user, EmailTokenPurpose.PASSWORD_RESET)
@@ -176,7 +194,7 @@ def delete_account(
     proxies and clients.
     """
     _not_the_demo(user)
-    _check_password(user, payload.password)
+    _check_password(db, user, payload.password)
     db.delete(user)  # ON DELETE CASCADE does the rest
     db.commit()
     clear_refresh_cookie(response)
