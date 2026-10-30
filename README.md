@@ -21,7 +21,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 
 ## Features
 
-- **Accounts:** register and log in with bcrypt-hashed passwords. Logins stay signed in through a rotating refresh token in an httpOnly cookie, with **Log out everywhere** for a lost device. A one-click **demo account** rebuilds its sample data around the current week (in the visitor's time zone) whenever it's more than an hour old, so it never goes stale.
+- **Accounts:** register and log in with bcrypt-hashed passwords. Logins stay signed in through a rotating refresh token in an httpOnly cookie, with **Log out everywhere** for a lost device. **Settings** to change your password or email (confirmed by a link to the new address), reset a forgotten password by email, or delete the account. A one-click **demo account** rebuilds its sample data around the current week (in the visitor's time zone) whenever it's more than an hour old, so it never goes stale.
 - **Courses and assignments:** assignments, quizzes, exams, labs and projects with due dates, priority and status; filters by course, status, priority and date range, all kept in the URL. **Repeating deadlines** ("Lab {n}" every Friday for 10 weeks) can be edited or deleted for only one week or for that week onwards.
 - **Shared courses:** invite classmates with a link; everyone sees the course's deadlines and can add to them, while each person's status, marks and study time stay their own.
 - **Grade tracker:** give deadlines a weight and enter marks to see each course's grade so far, the lowest and highest final grade still possible, and the average you need on the rest for every letter on York's scale.
@@ -46,7 +46,8 @@ Each stage has a written walkthrough of the design decisions in [`docs/`](docs/)
 - **Repeating deadlines without special cases.** A weekly rule is expanded once into ordinary rows sharing a `series_id`, so filters, the calendar, the feed and stats need no changes. Dates are worked out on the student's wall clock, so a Friday 23:59 lab stays at 23:59 after the clocks change, and "this and following" edits shift by the same wall-clock amount. ([Stage 8](docs/stage-8.md))
 - **Grades in exact decimals.** `NUMERIC` columns, `Decimal` maths and typed input sent as strings, so nothing passes through a float. Rounding is always cautious: grades round down, "needed" rounds up. The same rules are enforced by Pydantic and by Postgres `CHECK` constraints. ([Stage 9](docs/stage-9.md))
 - **Shared data, personal progress.** Deadlines belong to the course, but status and marks live in a per-person `assignment_progress` table (no row means "to do"), and study sessions carry who studied. The migration copies existing data across instead of dropping it, and was checked row for row in both directions. ([Stage 10](docs/stage-10.md))
-- **Tested in a real browser.** Playwright runs 22 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed, silent token refresh, logging out across tabs and devices, a repeating lab series, grades, sharing a course with a classmate who signs up from the invite), three of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
+- **Account flows done carefully.** Emailed links are single-use, expire, are stored only as hashes, and carry their token in the URL fragment so it never reaches a server log. Password reset doesn't reveal who has an account, and email goes out after the response. Email providers are pluggable (`none` / `console` / `file` / `smtp`), and features that need email hide themselves when it's off. ([Stage 11](docs/stage-11.md))
+- **Tested in a real browser.** Playwright runs 26 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed, silent token refresh, logging out across tabs and devices, a repeating lab series, grades, sharing a course with a classmate who signs up from the invite, password reset through the emailed link), three of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
 - **Database integrity, not just app checks:** foreign keys with `ON DELETE CASCADE`, `CHECK` constraints for enums and session times, and reversible Alembic migrations tested both ways in CI.
 
 ## Architecture
@@ -65,9 +66,9 @@ In development, Vite proxies `/api` to FastAPI, so the browser sees a single ori
 
 | | |
 |---|---|
-| **Backend** | 289 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF, weekly recurrence across DST, exact grade maths and its rounding, shared courses (owner, member, outsider) |
-| **Frontend** | 80 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection, repeat rules, grade wording |
-| **End-to-end** | 22 Playwright tests in a real browser (three also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle, staying logged in safely and logging out everywhere, a repeating series, weights and marks to a grade, sharing and leaving a course |
+| **Backend** | 328 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF, weekly recurrence across DST, exact grade maths and its rounding, shared courses (owner, member, outsider), password reset and account changes |
+| **Frontend** | 87 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection, repeat rules, grade wording, emailed-link tokens |
+| **End-to-end** | 26 Playwright tests in a real browser (three also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle, staying logged in safely and logging out everywhere, a repeating series, weights and marks to a grade, sharing and leaving a course, forgot password, settings, deleting an account |
 | **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, all three test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
 
 ## Running locally
@@ -110,7 +111,6 @@ One multi-stage Docker image (FastAPI serving the API *and* the built React app)
 
 ## Roadmap
 
-- Account settings: change password or email, password reset by email, delete account
 - Rate limiting and lockout on repeated failed logins
 - Email reminders the day before a deadline
 

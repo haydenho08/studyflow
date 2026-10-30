@@ -9,6 +9,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
+import { OUTBOX_DIR } from "./e2e/outbox";
+
 const PORT = 8100;
 const external = process.env.E2E_BASE_URL;
 const isCI = Boolean(process.env.CI);
@@ -45,6 +47,9 @@ export default defineConfig({
         env: {
           STATIC_DIR: fileURLToPath(new URL("dist", import.meta.url)),
           DEMO_ENABLED: "true",
+          // Emails become files the tests can read (password reset, email change).
+          MAIL_BACKEND: "file",
+          MAIL_OUTBOX_DIR: OUTBOX_DIR,
         },
       },
 });

@@ -40,6 +40,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File backend\scripts\seed_demo_re
 
 (That sets the demo's password to `studyflow-demo` until the next automatic rebuild.)
 
+## 4. Email (optional: password reset, changing email)
+
+Out of the box `MAIL_BACKEND` is unset, so it's `none`: the app hides **Forgot password?** and the change-email form, and everything else works. To switch them on, use any SMTP provider. [Resend](https://resend.com) has a free tier; you need to verify a domain you own to send from it.
+
+In Render → the service → **Environment**, add:
+
+| Key | Value |
+|---|---|
+| `MAIL_BACKEND` | `smtp` |
+| `SMTP_HOST` / `SMTP_PORT` | from the provider (Resend: `smtp.resend.com`, `587`) |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | from the provider (Resend: `resend` and an API key); mark the password **secret** |
+| `MAIL_FROM` | `StudyFlow <no-reply@your-verified-domain>` |
+| `PUBLIC_URL` | `https://studyflow-q3u0.onrender.com` (the address used in emailed links) |
+
+Save, and Render redeploys. `GET /api/config` then says `"email_enabled": true`, and the links appear. If sending fails, the app logs the error and carries on; the person sees the same "we've sent a link" message either way.
+
 ## Free-tier behaviour to expect
 
 - Render's free web services **sleep when idle**; the first request afterwards takes a while (cold start). Mention it next to the link ("may take ~30 s to wake up").

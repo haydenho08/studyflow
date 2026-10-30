@@ -31,6 +31,28 @@
         }
       }
     },
+    "/api/config": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Server Config",
+        "description": "Which optional features this deployment has, so the app only offers working ones.",
+        "operationId": "server_config_api_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/register": {
       "post": {
         "tags": [
@@ -289,6 +311,260 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/account/password": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Change Password",
+        "description": "New password. Every *other* login is ended (this device stays in), as are any reset links.",
+        "operationId": "change_password_api_account_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/account/email": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Change Email",
+        "description": "Send a confirmation link to the new address. Nothing changes until it's clicked.",
+        "operationId": "change_email_api_account_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Change Email Api Account Email Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/account/email/confirm": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Confirm Email",
+        "description": "The link from the email. Needs no login: the token is the proof, and it can be opened on\nwhichever device the email arrived on.",
+        "operationId": "confirm_email_api_account_email_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/password-reset": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Request Password Reset",
+        "description": "Email a reset link. The answer is the same whether or not the account exists, so this\ncan't be used to find out who has one.",
+        "operationId": "request_password_reset_api_account_password_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Request Password Reset Api Account Password Reset Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/password-reset/confirm": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Reset Password",
+        "description": "Set a new password from a reset link, and log out every device: if someone else had\nthe old password, they're out too.",
+        "operationId": "reset_password_api_account_password_reset_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordReset"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/delete": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Delete Account",
+        "description": "Delete the account and everything in it. Courses you own go for their members too; your\nprogress in courses you joined goes, but those courses stay for everyone else.\n\nPOST, not DELETE: it needs the password in a body, and DELETE bodies get dropped by some\nproxies and clients.",
+        "operationId": "delete_account_api_account_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1735,6 +2011,21 @@
   },
   "components": {
     "schemas": {
+      "AccountDelete": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "AccountDelete"
+      },
       "AssignmentCreate": {
         "properties": {
           "course_id": {
@@ -2646,6 +2937,42 @@
         "type": "object",
         "title": "DemoLogin"
       },
+      "EmailChange": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Password"
+          },
+          "new_email": {
+            "type": "string",
+            "format": "email",
+            "title": "New Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "password",
+          "new_email"
+        ],
+        "title": "EmailChange"
+      },
+      "EmailConfirm": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "EmailConfirm"
+      },
       "GradeTarget": {
         "properties": {
           "letter": {
@@ -2751,6 +3078,63 @@
         "title": "InvitePreview",
         "description": "What someone holding the link sees before joining."
       },
+      "PasswordChange": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "New Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "PasswordChange"
+      },
+      "PasswordReset": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Token"
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "New Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token",
+          "new_password"
+        ],
+        "title": "PasswordReset"
+      },
+      "PasswordResetRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "PasswordResetRequest"
+      },
       "Priority": {
         "type": "string",
         "enum": [
@@ -2821,6 +3205,25 @@
         ],
         "title": "RepeatRule",
         "description": "Repeat weekly, on some days of the week, until a date or for a number of deadlines."
+      },
+      "ServerConfig": {
+        "properties": {
+          "email_enabled": {
+            "type": "boolean",
+            "title": "Email Enabled"
+          },
+          "demo_enabled": {
+            "type": "boolean",
+            "title": "Demo Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email_enabled",
+          "demo_enabled"
+        ],
+        "title": "ServerConfig",
+        "description": "What this deployment has switched on, so the app can hide what isn't available."
       },
       "Status": {
         "type": "string",

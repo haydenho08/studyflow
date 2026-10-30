@@ -3,6 +3,7 @@ import os
 # Must be set before the app (and its cached settings) is imported.
 os.environ["BCRYPT_ROUNDS"] = "4"  # minimum cost: hashing is the slowest part of the suite
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-that-is-at-least-32-chars")
+os.environ["MAIL_BACKEND"] = "none"  # whatever .env says: tests that need email turn it on
 
 from collections.abc import Callable, Iterator
 

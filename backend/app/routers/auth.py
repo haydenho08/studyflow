@@ -45,7 +45,7 @@ def _issue(response: Response, tokens: IssuedTokens) -> Token:
     return Token(access_token=tokens.access_token)
 
 
-def _clear_cookie(response: Response) -> None:
+def clear_refresh_cookie(response: Response) -> None:
     settings = get_settings()
     response.delete_cookie(
         REFRESH_COOKIE,
@@ -113,7 +113,7 @@ def refresh(
     if tokens is None:
         # Not raised: an HTTPException would drop the cookie deletion along with `response`.
         failed = JSONResponse({"detail": "Not logged in"}, status.HTTP_401_UNAUTHORIZED)
-        _clear_cookie(failed)
+        clear_refresh_cookie(failed)
         return failed
     return _issue(response, tokens)
 
@@ -123,14 +123,14 @@ def logout(db: DbSession, response: Response, refresh_token: RefreshCookie = Non
     """End this device's session. Its access token stops working at once, too."""
     if refresh_token:
         revoke_session(db, refresh_token)
-    _clear_cookie(response)
+    clear_refresh_cookie(response)
 
 
 @router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
 def logout_everywhere(user: CurrentUser, db: DbSession, response: Response) -> None:
     """End every session this account has, on every device: for a lost laptop or a leaked token."""
     revoke_all_sessions(db, user)
-    _clear_cookie(response)
+    clear_refresh_cookie(response)
 
 
 @router.get("/me", response_model=UserRead)

@@ -5,7 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.frontend import mount_frontend
-from app.routers import assignments, auth, calendar, courses, grades, stats, study_sessions
+from app.routers import (
+    account,
+    assignments,
+    auth,
+    calendar,
+    courses,
+    grades,
+    stats,
+    study_sessions,
+)
+from app.schemas.auth import ServerConfig
 
 
 def create_app(static_dir: Path | None = None) -> FastAPI:
@@ -29,7 +39,15 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @api.get("/config", response_model=ServerConfig, tags=["health"])
+    def server_config() -> ServerConfig:
+        """Which optional features this deployment has, so the app only offers working ones."""
+        return ServerConfig(
+            email_enabled=settings.email_enabled, demo_enabled=settings.demo_enabled
+        )
+
     api.include_router(auth.router)
+    api.include_router(account.router)
     api.include_router(courses.router)
     api.include_router(courses.invites)
     api.include_router(assignments.router)

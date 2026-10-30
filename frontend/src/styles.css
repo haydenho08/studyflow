@@ -1664,6 +1664,64 @@ details.card[open] > summary {
   }
 }
 
+/* --- account: settings and the pages behind email links --------------------------------------- */
+
+.settings-page {
+  max-width: 40rem;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.settings-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.settings-section > p {
+  margin: 0;
+}
+
+.settings-form,
+.link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.link-card {
+  max-width: 26rem;
+}
+
+.link-card .brand {
+  align-self: flex-start;
+}
+
+.success-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--low);
+  font-weight: 500;
+}
+
+.forgot-link {
+  align-self: flex-end;
+  font-size: 0.85rem;
+}
+
+.menu-item {
+  text-decoration: none;
+}
+
 /* --- sharing ------------------------------------------------------------------------------- */
 
 .dialog-subheading {

@@ -73,6 +73,11 @@ def new_refresh_token() -> str:
     return secrets.token_urlsafe(32)  # 256 bits from the OS's secure random source
 
 
+def hash_token(token: str) -> str:
+    """SHA-256 of a random token (refresh tokens, emailed links), for storing and looking up."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
 def hash_refresh_token(token: str) -> str:
     """SHA-256, not bcrypt: bcrypt is slow to make guessing *weak* passwords expensive, but a
     256-bit random token can't be guessed anyway, and every refresh has to look one up."""

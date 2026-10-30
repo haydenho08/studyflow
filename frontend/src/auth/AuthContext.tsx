@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
@@ -33,6 +33,16 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/**
+ * Drop every cached response that belongs to a user, so the next person to log in on this
+ * browser can never see the last one's data. The server's feature flags stay: they're the same
+ * for everyone, and removing a query cancels its fetch, which would leave a page that's waiting
+ * for them (the login page's "Forgot password?") waiting forever.
+ */
+function forgetUserData(queryClient: QueryClient) {
+  queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== queryKeys.config[0] });
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { status } = useSyncExternalStore(subscribe, getSession);
   const queryClient = useQueryClient();
@@ -55,13 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // (A running timer is kept when a login just ends: it's tagged with its owner's id, so only
   // that same user gets it back after logging in again. See lib/pomodoro.ts loadTimer.)
   useEffect(() => {
-    if (status === "out") queryClient.clear();
+    if (status === "out") forgetUserData(queryClient);
   }, [status, queryClient]);
 
   const login = useCallback(
     async (email: string, password: string) => {
       const { access_token } = await authApi.login(email, password);
-      queryClient.clear();
+      forgetUserData(queryClient);
       setSession(access_token);
     },
     [queryClient],
@@ -69,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginDemo = useCallback(async () => {
     const { access_token } = await authApi.demo(browserTimeZone());
-    queryClient.clear();
+    forgetUserData(queryClient);
     setSession(access_token);
   }, [queryClient]);
 

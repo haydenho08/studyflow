@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -45,6 +46,24 @@ class Settings(BaseSettings):
 
     # One-click public demo login (POST /api/auth/demo). Off unless a deployment turns it on.
     demo_enabled: bool = False
+
+    # Email (password reset, confirming a new address). "none" switches those features off;
+    # "console" prints messages (development); "file" writes .eml files to mail_outbox_dir (the
+    # browser tests read them); "smtp" sends through any provider (Resend, Brevo, Gmail, …).
+    mail_backend: Literal["none", "console", "file", "smtp"] = "none"
+    mail_from: str = "StudyFlow <no-reply@studyflow.app>"
+    mail_outbox_dir: Path | None = None
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    # The site's address, for links in emails (https://studyflow-q3u0.onrender.com). Unset: the
+    # address the request came in on.
+    public_url: str | None = None
+
+    @property
+    def email_enabled(self) -> bool:
+        return self.mail_backend != "none"
 
     @field_validator("database_url", "test_database_url")
     @classmethod

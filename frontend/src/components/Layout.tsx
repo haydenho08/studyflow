@@ -8,6 +8,7 @@ import {
   ListChecks,
   LogOut,
   MonitorSmartphone,
+  Settings,
   Timer,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -87,6 +88,10 @@ function AccountMenu() {
           <span className="muted">Logged in as</span>
           <strong>{user?.email}</strong>
         </p>
+        <Link to="/settings" className="menu-item" onClick={() => menuRef.current?.hidePopover()}>
+          <Settings size={16} aria-hidden="true" />
+          Settings
+        </Link>
         <button type="button" className="menu-item" onClick={() => void logout()}>
           <LogOut size={16} aria-hidden="true" />
           Log out

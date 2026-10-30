@@ -2,6 +2,7 @@ import { BarChart3, CalendarDays, ExternalLink, Timer } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation } from "react-router";
 
+import { useServerConfig } from "../api/queries";
 import { DemoButton } from "../components/DemoButton";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { BrandMark } from "../components/Feedback";
@@ -54,6 +55,9 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   usePageTitle(mode === "register" ? "Create an account" : "Log in");
   const { isAuthenticated, login, register } = useAuth();
   const location = useLocation();
+  const config = useServerConfig();
+  // e.g. "Password changed. Log in with the new one." after a reset.
+  const notice = (location.state as { notice?: string } | null)?.notice;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<unknown>(null);
@@ -94,6 +98,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
         <form className="card auth-card" onSubmit={handleSubmit}>
           <h2>{isRegister ? "Create your account" : "Log in"}</h2>
+          {notice && (
+            <p className="success-line" role="status">
+              {notice}
+            </p>
+          )}
 
           <label className="field">
             <span>Email</span>
@@ -116,6 +125,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               onChange={(e) => setPassword(e.target.value)}
             />
             {isRegister && <small className="muted">At least 8 characters.</small>}
+            {!isRegister && config.data?.email_enabled && (
+              <Link to="/forgot-password" className="forgot-link">
+                Forgot password?
+              </Link>
+            )}
           </label>
 
           {localError && (

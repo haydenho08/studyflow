@@ -17,7 +17,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 DbSession = Annotated[Session, Depends(get_db)]
 
 
-def get_current_user(db: DbSession, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+def get_current_session(
+    db: DbSession, token: Annotated[str, Depends(oauth2_scheme)]
+) -> AuthSession:
+    """The live login this request's access token belongs to (its user is session.user)."""
     claims = decode_access_token(token)
     session = db.get(AuthSession, claims.session_id) if claims is not None else None
     # A valid signature isn't enough: the login it came from must still be live. That's what
@@ -33,6 +36,13 @@ def get_current_user(db: DbSession, token: Annotated[str, Depends(oauth2_scheme)
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return session
+
+
+CurrentSession = Annotated[AuthSession, Depends(get_current_session)]
+
+
+def get_current_user(session: CurrentSession) -> User:
     return session.user
 
 

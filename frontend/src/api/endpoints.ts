@@ -13,6 +13,7 @@ import type {
   CourseMember,
   CourseUpdate,
   InvitePreview,
+  ServerConfig,
   StudySession,
   StudySessionCreate,
   StudySessionFilters,
@@ -91,4 +92,31 @@ export const calendarFeedApi = {
 
 export const gradesApi = {
   list: () => api<CourseGrades[]>("/api/grades"),
+};
+
+/** Which optional features this server has (email, the demo). */
+export const configApi = {
+  get: () => api<ServerConfig>("/api/config"),
+};
+
+type Detail = { detail: string };
+
+export const accountApi = {
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api<void>("/api/account/password", {
+      method: "POST",
+      json: { current_password: currentPassword, new_password: newPassword },
+    }),
+  // Sends a confirmation link to the new address; nothing changes until it's clicked.
+  changeEmail: (password: string, newEmail: string) =>
+    api<Detail>("/api/account/email", { method: "POST", json: { password, new_email: newEmail } }),
+  confirmEmail: (token: string) => api<User>("/api/account/email/confirm", { method: "POST", json: { token } }),
+  requestPasswordReset: (email: string) =>
+    api<Detail>("/api/account/password-reset", { method: "POST", json: { email } }),
+  resetPassword: (token: string, newPassword: string) =>
+    api<void>("/api/account/password-reset/confirm", {
+      method: "POST",
+      json: { token, new_password: newPassword },
+    }),
+  deleteAccount: (password: string) => api<void>("/api/account/delete", { method: "POST", json: { password } }),
 };

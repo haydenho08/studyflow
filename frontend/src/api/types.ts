@@ -6,6 +6,7 @@ type Schemas = components["schemas"];
 
 export type User = Schemas["UserRead"];
 export type Token = Schemas["Token"];
+export type ServerConfig = Schemas["ServerConfig"];
 
 export type Course = Schemas["CourseRead"];
 export type CourseCreate = Schemas["CourseCreate"];

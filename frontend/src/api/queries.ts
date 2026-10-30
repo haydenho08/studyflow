@@ -8,11 +8,20 @@ import {
 } from "@tanstack/react-query";
 
 import { browserTimeZone } from "../lib/week";
-import { assignmentsApi, calendarFeedApi, coursesApi, gradesApi, invitesApi, studyApi } from "./endpoints";
+import {
+  assignmentsApi,
+  calendarFeedApi,
+  configApi,
+  coursesApi,
+  gradesApi,
+  invitesApi,
+  studyApi,
+} from "./endpoints";
 import type { AssignmentFilters, AssignmentUpdate, CourseUpdate, StudySessionFilters } from "./types";
 
 export const queryKeys = {
   me: ["me"] as const,
+  config: ["config"] as const,
   courses: ["courses"] as const,
   // Prefix key: invalidating ["assignments"] refreshes every filtered list at once.
   assignments: ["assignments"] as const,
@@ -241,4 +250,9 @@ export function useAcceptInvite() {
       void invalidateAssignments(queryClient);
     },
   });
+}
+
+/** The server's optional features. They only change with a redeploy, so fetch once. */
+export function useServerConfig() {
+  return useQuery({ queryKey: queryKeys.config, queryFn: configApi.get, staleTime: Infinity });
 }
