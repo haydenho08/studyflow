@@ -9,7 +9,10 @@ import type {
   Course,
   CourseCreate,
   CourseGrades,
+  CourseInvite,
+  CourseMember,
   CourseUpdate,
+  InvitePreview,
   StudySession,
   StudySessionCreate,
   StudySessionFilters,
@@ -39,6 +42,19 @@ export const coursesApi = {
   update: (id: number, changes: CourseUpdate) =>
     api<Course>(`/api/courses/${id}`, { method: "PATCH", json: changes }),
   remove: (id: number) => api<void>(`/api/courses/${id}`, { method: "DELETE" }),
+  // Sharing (owner only): the invite link, turned on, replaced or off.
+  invite: (id: number) => api<CourseInvite>(`/api/courses/${id}/invite`),
+  createInvite: (id: number) => api<CourseInvite>(`/api/courses/${id}/invite`, { method: "POST" }),
+  removeInvite: (id: number) => api<void>(`/api/courses/${id}/invite`, { method: "DELETE" }),
+  members: (id: number) => api<CourseMember[]>(`/api/courses/${id}/members`),
+  // Your own id: leave the course. Someone else's (owner only): remove them.
+  removeMember: (id: number, userId: number) =>
+    api<void>(`/api/courses/${id}/members/${userId}`, { method: "DELETE" }),
+};
+
+export const invitesApi = {
+  preview: (token: string) => api<InvitePreview>(`/api/invites/${encodeURIComponent(token)}`),
+  accept: (token: string) => api<Course>(`/api/invites/${encodeURIComponent(token)}`, { method: "POST" }),
 };
 
 export const assignmentsApi = {

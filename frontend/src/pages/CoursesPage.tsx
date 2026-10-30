@@ -6,6 +6,7 @@ import type { Course } from "../api/types";
 import { ColorPicker } from "../components/ColorPicker";
 import { useConfirm } from "../components/ConfirmDialog";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { ShareCourseButton } from "../components/ShareCourseDialog";
 import { EmptyState, SkeletonList } from "../components/Feedback";
 import { Swatch } from "../components/Swatch";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -107,40 +108,57 @@ function CourseItem({ course }: { course: Course }) {
   async function handleDelete() {
     const ok = await confirm({
       title: `Delete ${course.code}?`,
-      message: "This also deletes its assignments and logged study time. It can't be undone.",
+      message:
+        course.member_count > 0
+          ? `It's shared: this deletes it for all ${course.member_count + 1} people, with its assignments and everyone's logged study time. It can't be undone.`
+          : "This also deletes its assignments and logged study time. It can't be undone.",
       confirmLabel: "Delete course",
       danger: true,
     });
     if (ok) deleteCourse.mutate(course.id);
   }
 
+  const isOwner = course.role === "owner";
+  const people = course.member_count + 1;
+
   return (
     <li className="card row-item is-compact">
       <Swatch color={course.color} />
       <div className="row-main">
         <div className="row-title">{course.code}</div>
-        <div className="muted row-meta">{course.name}</div>
+        <div className="muted row-meta">
+          <span>{course.name}</span>
+          {!isOwner && <span>Shared by {course.owner_email}</span>}
+          {isOwner && course.member_count > 0 && <span>Shared with {course.member_count}</span>}
+          {!isOwner && <span>{people} people</span>}
+        </div>
       </div>
       <div className="row-actions">
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => setEditing(true)}
-          aria-label={`Edit ${course.code}`}
-          title="Edit"
-        >
-          <Pencil size={16} />
-        </button>
-        <button
-          type="button"
-          className="icon-btn is-danger"
-          onClick={handleDelete}
-          disabled={deleteCourse.isPending}
-          aria-label={`Delete ${course.code}`}
-          title="Delete"
-        >
-          <Trash2 size={16} />
-        </button>
+        <ShareCourseButton course={course} />
+        {/* Renaming, recolouring and deleting are the owner's: members leave from People. */}
+        {isOwner && (
+          <>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setEditing(true)}
+              aria-label={`Edit ${course.code}`}
+              title="Edit"
+            >
+              <Pencil size={16} />
+            </button>
+            <button
+              type="button"
+              className="icon-btn is-danger"
+              onClick={handleDelete}
+              disabled={deleteCourse.isPending}
+              aria-label={`Delete ${course.code}`}
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+          </>
+        )}
       </div>
       <ErrorMessage error={deleteCourse.error} />
     </li>

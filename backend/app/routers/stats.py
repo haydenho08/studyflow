@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query
 from sqlalchemy import Date, cast, func, select
 
 from app.deps import CurrentUser, DbSession
-from app.models import Course, StudySession
+from app.models import StudySession
 from app.schemas.study import CourseSeconds, CourseTotal, DayStats, WeekStats
 from app.zones import parse_timezone
 
@@ -44,9 +44,8 @@ def week_stats(
             seconds.label("seconds"),
             func.count().label("sessions"),
         )
-        .join(StudySession.course)
         .where(
-            Course.user_id == user.id,
+            StudySession.user_id == user.id,  # your own time, in shared courses too
             StudySession.started_at >= week_start,
             StudySession.started_at < week_end,
         )

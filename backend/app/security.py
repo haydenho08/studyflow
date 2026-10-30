@@ -1,4 +1,5 @@
 import hashlib
+import re
 import secrets
 from datetime import UTC, datetime, timedelta
 from functools import cache
@@ -76,3 +77,18 @@ def hash_refresh_token(token: str) -> str:
     """SHA-256, not bcrypt: bcrypt is slow to make guessing *weak* passwords expensive, but a
     256-bit random token can't be guessed anyway, and every refresh has to look one up."""
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+# Secret-URL tokens (calendar feed, course invite links): secrets.token_urlsafe(32) gives 43
+# base64url characters, 256 bits from the OS's secure random source.
+URL_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_-]{43}")
+
+
+def new_url_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def is_url_token(value: str) -> bool:
+    """Only strings shaped like our tokens are ever looked up: anything else (a NUL byte, which
+    Postgres refuses outright) can't match one anyway."""
+    return URL_TOKEN_PATTERN.fullmatch(value) is not None

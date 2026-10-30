@@ -31,6 +31,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
 
     api.include_router(auth.router)
     api.include_router(courses.router)
+    api.include_router(courses.invites)
     api.include_router(assignments.router)
     api.include_router(study_sessions.router)
     api.include_router(stats.router)

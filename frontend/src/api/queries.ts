@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 
 import { browserTimeZone } from "../lib/week";
-import { assignmentsApi, calendarFeedApi, coursesApi, gradesApi, studyApi } from "./endpoints";
+import { assignmentsApi, calendarFeedApi, coursesApi, gradesApi, invitesApi, studyApi } from "./endpoints";
 import type { AssignmentFilters, AssignmentUpdate, CourseUpdate, StudySessionFilters } from "./types";
 
 export const queryKeys = {
@@ -24,6 +24,9 @@ export const queryKeys = {
   grades: ["grades"] as const,
   weekStats: (start: string, tz: string) => ["stats", "week", start, tz] as const,
   calendarFeed: ["calendar-feed"] as const,
+  invite: (courseId: number) => ["courses", courseId, "invite"] as const,
+  members: (courseId: number) => ["courses", courseId, "members"] as const,
+  invitePreview: (token: string) => ["invites", token] as const,
 };
 
 export function useCourses() {
@@ -182,4 +185,60 @@ export function useDeleteCalendarFeed() {
 
 export function useGrades() {
   return useQuery({ queryKey: queryKeys.grades, queryFn: gradesApi.list });
+}
+
+// --- sharing ------------------------------------------------------------------------------------
+
+export function useCourseInvite(courseId: number, enabled: boolean) {
+  return useQuery({ queryKey: queryKeys.invite(courseId), queryFn: () => coursesApi.invite(courseId), enabled });
+}
+
+export function useCreateInvite(courseId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => coursesApi.createInvite(courseId),
+    onSuccess: (invite) => queryClient.setQueryData(queryKeys.invite(courseId), invite),
+  });
+}
+
+export function useDeleteInvite(courseId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => coursesApi.removeInvite(courseId),
+    onSuccess: () => queryClient.setQueryData(queryKeys.invite(courseId), { path: null }),
+  });
+}
+
+export function useCourseMembers(courseId: number, enabled: boolean) {
+  return useQuery({ queryKey: queryKeys.members(courseId), queryFn: () => coursesApi.members(courseId), enabled });
+}
+
+/** Leave a course, or (owner) remove someone. Leaving takes your deadlines, grades and study time
+ *  for it off every page, so all of those refresh. */
+export function useRemoveMember(courseId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => coursesApi.removeMember(courseId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses });
+      void invalidateAssignments(queryClient);
+      queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stats });
+    },
+  });
+}
+
+export function useInvitePreview(token: string) {
+  return useQuery({ queryKey: queryKeys.invitePreview(token), queryFn: () => invitesApi.preview(token) });
+}
+
+export function useAcceptInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: invitesApi.accept,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses });
+      void invalidateAssignments(queryClient);
+    },
+  });
 }

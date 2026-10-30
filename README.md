@@ -23,6 +23,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 
 - **Accounts:** register and log in with bcrypt-hashed passwords. Logins stay signed in through a rotating refresh token in an httpOnly cookie, with **Log out everywhere** for a lost device. A one-click **demo account** rebuilds its sample data around the current week (in the visitor's time zone) whenever it's more than an hour old, so it never goes stale.
 - **Courses and assignments:** assignments, quizzes, exams, labs and projects with due dates, priority and status; filters by course, status, priority and date range, all kept in the URL. **Repeating deadlines** ("Lab {n}" every Friday for 10 weeks) can be edited or deleted for only one week or for that week onwards.
+- **Shared courses:** invite classmates with a link; everyone sees the course's deadlines and can add to them, while each person's status, marks and study time stay their own.
 - **Grade tracker:** give deadlines a weight and enter marks to see each course's grade so far, the lowest and highest final grade still possible, and the average you need on the rest for every letter on York's scale.
 - **Calendar week view:** deadlines placed on the right *local* day (including across daylight-saving changes), an overdue panel, and one-click "done".
 - **Pomodoro timer:** 25/5 or 50/10 focus blocks that survive refreshes, sleep, background tabs and an expired login, and log each completed block to its course.
@@ -34,7 +35,7 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 
 Each stage has a written walkthrough of the design decisions in [`docs/`](docs/).
 
-- **Every query is scoped to the logged-in user.** Lookups go through one ownership module, and other users' data returns **404, not 403**, so the API never confirms it exists. Tests try every verb as another user. ([Stage 1](docs/stage-1.md))
+- **Every query is scoped to what you can see.** Lookups go through one access module, and other users' data returns **404, not 403**, so the API never confirms it exists. With shared courses, members get an honest 403 for owner-only actions. Tests try every verb as another user. ([Stage 1](docs/stage-1.md), [Stage 10](docs/stage-10.md))
 - **Time zones done properly.** UTC `timestamptz` in Postgres, offset-less datetimes rejected at the API, local-time conversion only at the edges, and **half-open date ranges** so consecutive weeks never double-count. Tests pin a DST-observing zone and cover the weeks when the clocks change. ([Stages 1–4](docs/))
 - **One source of truth for the API contract.** Pydantic schemas → OpenAPI → generated TypeScript types for request bodies *and* query parameters. CI fails if either generated file is stale. ([Stage 2](docs/stage-2.md), [Stage 4](docs/stage-4.md))
 - **Aggregation in SQL.** Weekly stats are a `GROUP BY` over the user's local day (`timezone(tz, started_at)::date`), not a Python loop over rows. Overlapping study sessions are rejected with the interval-overlap rule. ([Stage 3](docs/stage-3.md))
@@ -44,7 +45,8 @@ Each stage has a written walkthrough of the design decisions in [`docs/`](docs/)
 - **Login that can't be lifted out of storage.** A 15-minute access token held only in memory, plus a refresh token in an `HttpOnly; Secure; SameSite=Strict` cookie that rotates on every use. Reusing an old one is treated as theft and ends the session. Access tokens name their session, so logging out takes effect immediately. CSRF is covered by SameSite plus an Origin check. ([Stage 7](docs/stage-7.md))
 - **Repeating deadlines without special cases.** A weekly rule is expanded once into ordinary rows sharing a `series_id`, so filters, the calendar, the feed and stats need no changes. Dates are worked out on the student's wall clock, so a Friday 23:59 lab stays at 23:59 after the clocks change, and "this and following" edits shift by the same wall-clock amount. ([Stage 8](docs/stage-8.md))
 - **Grades in exact decimals.** `NUMERIC` columns, `Decimal` maths and typed input sent as strings, so nothing passes through a float. Rounding is always cautious: grades round down, "needed" rounds up. The same rules are enforced by Pydantic and by Postgres `CHECK` constraints. ([Stage 9](docs/stage-9.md))
-- **Tested in a real browser.** Playwright runs 20 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed, silent token refresh, logging out across tabs and devices, a repeating lab series, grades), three of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
+- **Shared data, personal progress.** Deadlines belong to the course, but status and marks live in a per-person `assignment_progress` table (no row means "to do"), and study sessions carry who studied. The migration copies existing data across instead of dropping it, and was checked row for row in both directions. ([Stage 10](docs/stage-10.md))
+- **Tested in a real browser.** Playwright runs 22 user journeys (sign-up, deadlines on the calendar, a full Pomodoro on a fake clock, the calendar feed, silent token refresh, logging out across tabs and devices, a repeating lab series, grades, sharing a course with a classmate who signs up from the invite), three of them also on a phone layout, against FastAPI serving the production build on a real Postgres. ([Stage 6](docs/stage-6.md))
 - **Database integrity, not just app checks:** foreign keys with `ON DELETE CASCADE`, `CHECK` constraints for enums and session times, and reversible Alembic migrations tested both ways in CI.
 
 ## Architecture
@@ -63,9 +65,9 @@ In development, Vite proxies `/api` to FastAPI, so the browser sees a single ori
 
 | | |
 |---|---|
-| **Backend** | 249 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF, weekly recurrence across DST, exact grade maths and its rounding |
+| **Backend** | 289 pytest tests against a real PostgreSQL (deliberately on a non-UTC session): auth, per-user isolation, validation, filters, cascades, overlap detection, time-zone bucketing, DST weeks, serving the built frontend, the calendar feed, refresh-token rotation and theft detection, CSRF, weekly recurrence across DST, exact grade maths and its rounding, shared courses (owner, member, outsider) |
 | **Frontend** | 80 Vitest unit tests for the logic most likely to hide bugs: date conversion across DST, URL filter parsing, PATCH diffing, timer maths and ownership, chart ticks, palette selection, repeat rules, grade wording |
-| **End-to-end** | 20 Playwright tests in a real browser (three also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle, staying logged in safely and logging out everywhere, a repeating series, weights and marks to a grade |
+| **End-to-end** | 22 Playwright tests in a real browser (three also on a phone layout), each with its own fresh account: sign-up and login, the demo, course → deadline → calendar, filters, cascading deletes, a full Pomodoro on a fake clock, the calendar feed's lifecycle, staying logged in safely and logging out everywhere, a repeating series, weights and marks to a grade, sharing and leaving a course |
 | **CI** ([workflow](.github/workflows/ci.yml)) | Ruff + ESLint, migrations up → check → down → up, all three test suites, typecheck + production build, generated-file freshness checks, production Docker image build |
 
 ## Running locally
@@ -108,7 +110,6 @@ One multi-stage Docker image (FastAPI serving the API *and* the built React app)
 
 ## Roadmap
 
-- Shared courses for study groups (invite classmates; everyone tracks their own progress)
 - Account settings: change password or email, password reset by email, delete account
 - Rate limiting and lockout on repeated failed logins
 - Email reminders the day before a deadline

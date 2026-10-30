@@ -129,14 +129,15 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             {submitting ? "Please wait…" : isRegister ? "Create account" : "Log in"}
           </button>
 
+          {/* state: keeps "where to go afterwards" (an invite link, say) when switching forms. */}
           <p className="muted switch-mode">
             {isRegister ? (
               <>
-                Already have an account? <Link to="/login">Log in</Link>
+                Already have an account? <Link to="/login" state={location.state}>Log in</Link>
               </>
             ) : (
               <>
-                New here? <Link to="/register">Create an account</Link>
+                New here? <Link to="/register" state={location.state}>Create an account</Link>
               </>
             )}
           </p>

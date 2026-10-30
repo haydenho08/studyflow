@@ -307,6 +307,7 @@
           "courses"
         ],
         "summary": "List Courses",
+        "description": "Your own courses and the ones you've joined.",
         "operationId": "list_courses_api_courses_get",
         "responses": {
           "200": {
@@ -380,8 +381,8 @@
         "tags": [
           "courses"
         ],
-        "summary": "Get Course",
-        "operationId": "get_course_api_courses__course_id__get",
+        "summary": "Read Course",
+        "operationId": "read_course_api_courses__course_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -481,6 +482,7 @@
           "courses"
         ],
         "summary": "Delete Course",
+        "description": "Delete the course for everyone in it. Members who only want out should leave instead.",
         "operationId": "delete_course_api_courses__course_id__delete",
         "security": [
           {
@@ -501,6 +503,333 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/invite": {
+      "get": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Read Invite",
+        "operationId": "read_invite_api_courses__course_id__invite_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Course Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseInvite"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Create Invite",
+        "description": "Turn the invite link on, or replace it: the old link stops working at once (people who\nalready joined stay in).",
+        "operationId": "create_invite_api_courses__course_id__invite_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Course Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseInvite"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Delete Invite",
+        "operationId": "delete_invite_api_courses__course_id__invite_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Course Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/members": {
+      "get": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "List Members",
+        "description": "Everyone in the course, owner first. Anyone in it can see who else is.",
+        "operationId": "list_members_api_courses__course_id__members_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Course Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourseMemberRead"
+                  },
+                  "title": "Response List Members Api Courses  Course Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/members/{member_id}": {
+      "delete": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Remove Member",
+        "description": "Leave a course (your own id), or, as its owner, remove someone from it.\n\nTheir status, marks and study sessions for this course go with them: they were about a\ncourse they can no longer see.",
+        "operationId": "remove_member_api_courses__course_id__members__member_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Course Id"
+            }
+          },
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invites/{token}": {
+      "get": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Preview Invite",
+        "description": "What the link is for, before you join. You must be logged in: the link isn't public.",
+        "operationId": "preview_invite_api_invites__token__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitePreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Accept Invite",
+        "description": "Join the course. Joining twice is harmless; the owner can't join their own course.",
+        "operationId": "accept_invite_api_invites__token__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseRead"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -875,8 +1204,8 @@
         "tags": [
           "assignments"
         ],
-        "summary": "Get Assignment",
-        "operationId": "get_assignment_api_assignments__assignment_id__get",
+        "summary": "Read Assignment",
+        "operationId": "read_assignment_api_assignments__assignment_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -921,6 +1250,7 @@
           "assignments"
         ],
         "summary": "Update Assignment",
+        "description": "Edit a deadline. The shared fields change for everyone in the course; status and the\nmark change only for you.",
         "operationId": "update_assignment_api_assignments__assignment_id__patch",
         "security": [
           {
@@ -1377,7 +1707,7 @@
           "grades"
         ],
         "summary": "Course Grades",
-        "description": "Every course's grade so far, its possible range, and what's needed for each letter grade.\n\nOnly deadlines with a weight count. Computed on request from the stored marks, so it can\nnever disagree with them.",
+        "description": "Every course's grade so far, its possible range, and what's needed for each letter grade.\n\nOnly deadlines with a weight count. The weights are the course's; the marks are this user's\nown (in a shared course, everyone sees their own grade). Computed on request from the stored\nmarks, so it can never disagree with them.",
         "operationId": "course_grades_api_grades_get",
         "responses": {
           "200": {
@@ -2067,6 +2397,68 @@
         ],
         "title": "CourseGrades"
       },
+      "CourseInvite": {
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "The invite link's path on this site (/join/<secret>), or null while off."
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "CourseInvite"
+      },
+      "CourseMemberRead": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "title": "Role"
+          },
+          "joined_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined At",
+            "description": "Null for the owner"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "joined_at"
+        ],
+        "title": "CourseMemberRead"
+      },
       "CourseRead": {
         "properties": {
           "id": {
@@ -2085,6 +2477,24 @@
             "type": "string",
             "title": "Color"
           },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "title": "Role",
+            "description": "Yours (owner), or joined through an invite link (member)"
+          },
+          "owner_email": {
+            "type": "string",
+            "title": "Owner Email"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count",
+            "description": "People who joined, not counting the owner"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2102,6 +2512,9 @@
           "name",
           "code",
           "color",
+          "role",
+          "owner_email",
+          "member_count",
           "created_at",
           "updated_at"
         ],
@@ -2281,6 +2694,62 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InvitePreview": {
+        "properties": {
+          "course_id": {
+            "type": "integer",
+            "title": "Course Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "owner_email": {
+            "type": "string",
+            "title": "Owner Email"
+          },
+          "member_count": {
+            "type": "integer",
+            "title": "Member Count"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "owner",
+                  "member"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role",
+            "description": "Your role if you're already in it, else null"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "code",
+          "name",
+          "color",
+          "owner_email",
+          "member_count",
+          "role"
+        ],
+        "title": "InvitePreview",
+        "description": "What someone holding the link sees before joining."
       },
       "Priority": {
         "type": "string",

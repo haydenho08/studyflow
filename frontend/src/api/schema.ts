@@ -161,7 +161,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Courses */
+        /**
+         * List Courses
+         * @description Your own courses and the ones you've joined.
+         */
         get: operations["list_courses_api_courses_get"];
         put?: never;
         /** Create Course */
@@ -179,16 +182,109 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Course */
-        get: operations["get_course_api_courses__course_id__get"];
+        /** Read Course */
+        get: operations["read_course_api_courses__course_id__get"];
         put?: never;
         post?: never;
-        /** Delete Course */
+        /**
+         * Delete Course
+         * @description Delete the course for everyone in it. Members who only want out should leave instead.
+         */
         delete: operations["delete_course_api_courses__course_id__delete"];
         options?: never;
         head?: never;
         /** Update Course */
         patch: operations["update_course_api_courses__course_id__patch"];
+        trace?: never;
+    };
+    "/api/courses/{course_id}/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Invite */
+        get: operations["read_invite_api_courses__course_id__invite_get"];
+        put?: never;
+        /**
+         * Create Invite
+         * @description Turn the invite link on, or replace it: the old link stops working at once (people who
+         *     already joined stay in).
+         */
+        post: operations["create_invite_api_courses__course_id__invite_post"];
+        /** Delete Invite */
+        delete: operations["delete_invite_api_courses__course_id__invite_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/courses/{course_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Members
+         * @description Everyone in the course, owner first. Anyone in it can see who else is.
+         */
+        get: operations["list_members_api_courses__course_id__members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/courses/{course_id}/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Member
+         * @description Leave a course (your own id), or, as its owner, remove someone from it.
+         *
+         *     Their status, marks and study sessions for this course go with them: they were about a
+         *     course they can no longer see.
+         */
+        delete: operations["remove_member_api_courses__course_id__members__member_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Invite
+         * @description What the link is for, before you join. You must be logged in: the link isn't public.
+         */
+        get: operations["preview_invite_api_invites__token__get"];
+        put?: never;
+        /**
+         * Accept Invite
+         * @description Join the course. Joining twice is harmless; the owner can't join their own course.
+         */
+        post: operations["accept_invite_api_invites__token__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/assignments": {
@@ -263,15 +359,19 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Assignment */
-        get: operations["get_assignment_api_assignments__assignment_id__get"];
+        /** Read Assignment */
+        get: operations["read_assignment_api_assignments__assignment_id__get"];
         put?: never;
         post?: never;
         /** Delete Assignment */
         delete: operations["delete_assignment_api_assignments__assignment_id__delete"];
         options?: never;
         head?: never;
-        /** Update Assignment */
+        /**
+         * Update Assignment
+         * @description Edit a deadline. The shared fields change for everyone in the course; status and the
+         *     mark change only for you.
+         */
         patch: operations["update_assignment_api_assignments__assignment_id__patch"];
         trace?: never;
     };
@@ -390,8 +490,9 @@ export interface paths {
          * Course Grades
          * @description Every course's grade so far, its possible range, and what's needed for each letter grade.
          *
-         *     Only deadlines with a weight count. Computed on request from the stored marks, so it can
-         *     never disagree with them.
+         *     Only deadlines with a weight count. The weights are the course's; the marks are this user's
+         *     own (in a shared course, everyone sees their own grade). Computed on request from the stored
+         *     marks, so it can never disagree with them.
          */
         get: operations["course_grades_api_grades_get"];
         put?: never;
@@ -599,6 +700,31 @@ export interface components {
             /** Targets */
             targets: components["schemas"]["GradeTarget"][];
         };
+        /** CourseInvite */
+        CourseInvite: {
+            /**
+             * Path
+             * @description The invite link's path on this site (/join/<secret>), or null while off.
+             */
+            path: string | null;
+        };
+        /** CourseMemberRead */
+        CourseMemberRead: {
+            /** User Id */
+            user_id: number;
+            /** Email */
+            email: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "owner" | "member";
+            /**
+             * Joined At
+             * @description Null for the owner
+             */
+            joined_at: string | null;
+        };
         /** CourseRead */
         CourseRead: {
             /** Id */
@@ -609,6 +735,19 @@ export interface components {
             code: string;
             /** Color */
             color: string;
+            /**
+             * Role
+             * @description Yours (owner), or joined through an invite link (member)
+             * @enum {string}
+             */
+            role: "owner" | "member";
+            /** Owner Email */
+            owner_email: string;
+            /**
+             * Member Count
+             * @description People who joined, not counting the owner
+             */
+            member_count: number;
             /**
              * Created At
              * Format: date-time
@@ -685,6 +824,29 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * InvitePreview
+         * @description What someone holding the link sees before joining.
+         */
+        InvitePreview: {
+            /** Course Id */
+            course_id: number;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Color */
+            color: string;
+            /** Owner Email */
+            owner_email: string;
+            /** Member Count */
+            member_count: number;
+            /**
+             * Role
+             * @description Your role if you're already in it, else null
+             */
+            role: ("owner" | "member") | null;
         };
         /**
          * Priority
@@ -1106,7 +1268,7 @@ export interface operations {
             };
         };
     };
-    get_course_api_courses__course_id__get: {
+    read_course_api_courses__course_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1180,6 +1342,220 @@ export interface operations {
                 "application/json": components["schemas"]["CourseUpdate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_invite_api_courses__course_id__invite_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseInvite"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_invite_api_courses__course_id__invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseInvite"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_invite_api_courses__course_id__invite_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_members_api_courses__course_id__members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseMemberRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_member_api_courses__course_id__members__member_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+                member_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_invite_api_invites__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_invite_api_invites__token__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1372,7 +1748,7 @@ export interface operations {
             };
         };
     };
-    get_assignment_api_assignments__assignment_id__get: {
+    read_assignment_api_assignments__assignment_id__get: {
         parameters: {
             query?: never;
             header?: never;

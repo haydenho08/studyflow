@@ -7,7 +7,8 @@ matter (escaping, CRLF line endings, folding long lines at 75 bytes) fit in a fe
 import datetime as dt
 from collections.abc import Iterable
 
-from app.models import Assignment, Status
+from app.models import Status
+from app.schemas.assignment import AssignmentRead
 
 STATUS_LABELS = {Status.TODO: "To do", Status.IN_PROGRESS: "In progress", Status.DONE: "Done"}
 MAX_LINE_OCTETS = 75
@@ -41,7 +42,9 @@ def format_utc(value: dt.datetime) -> str:
     return value.astimezone(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
-def _event(assignment: Assignment, course_code: str, stamp: str) -> list[str]:
+def _event(assignment: AssignmentRead, course_code: str, stamp: str) -> list[str]:
+    # AssignmentRead, not the row: it carries *this person's* status, and when either the
+    # deadline or their progress on it last changed.
     done = assignment.status == Status.DONE
     summary = f"{'✓ ' if done else ''}{course_code}: {assignment.title}"
     kind = assignment.kind.value.capitalize()
@@ -65,7 +68,7 @@ def _event(assignment: Assignment, course_code: str, stamp: str) -> list[str]:
     ]
 
 
-def build_calendar(rows: Iterable[tuple[Assignment, str]], now: dt.datetime) -> str:
+def build_calendar(rows: Iterable[tuple[AssignmentRead, str]], now: dt.datetime) -> str:
     """The whole feed. `rows` are (assignment, its course code) pairs."""
     stamp = format_utc(now)
     lines = [

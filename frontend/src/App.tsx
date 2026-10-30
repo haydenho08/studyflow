@@ -8,6 +8,7 @@ import { AuthPage } from "./pages/AuthPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { CoursesPage } from "./pages/CoursesPage";
 import { GradesPage } from "./pages/GradesPage";
+import { JoinPage } from "./pages/JoinPage";
 import { LandingPage } from "./pages/LandingPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { StatsPage } from "./pages/StatsPage";
@@ -44,6 +45,7 @@ export function App() {
           <Route path="/grades" element={<GradesPage />} />
           <Route path="/study" element={<StudyPage />} />
           <Route path="/stats" element={<StatsPage />} />
+          <Route path="/join/:token" element={<JoinPage />} />
         </Route>
       </Route>
 

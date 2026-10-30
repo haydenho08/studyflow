@@ -14,7 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import Assignment, Course, StudySession, User
+from app.models import Assignment, AssignmentProgress, Course, CourseMember, StudySession, User
 from app.security import hash_password
 
 DEMO_EMAIL = "demo@studyflow.app"
@@ -110,8 +110,12 @@ def reset_demo_data(db: Session, user: User, zone: ZoneInfo, password: str | Non
 
     user.hashed_password = hash_password(password or secrets.token_urlsafe(32))
     user.calendar_token = None  # an earlier visitor's feed URL stops working with their data
-    # ON DELETE CASCADE takes the old assignments and study sessions with the courses.
+    # ON DELETE CASCADE takes the old assignments, progress, sessions and members with the
+    # courses. Courses an earlier visitor joined with the demo account are left too.
     db.execute(delete(Course).where(Course.user_id == user.id))
+    db.execute(delete(CourseMember).where(CourseMember.user_id == user.id))
+    db.execute(delete(AssignmentProgress).where(AssignmentProgress.user_id == user.id))
+    db.execute(delete(StudySession).where(StudySession.user_id == user.id))
     courses = [Course(user_id=user.id, code=c, name=n, color=col) for c, n, col in COURSES]
     db.add_all(courses)
     db.flush()
@@ -120,19 +124,26 @@ def reset_demo_data(db: Session, user: User, zone: ZoneInfo, password: str | Non
         weight, score, out_of = (
             None if v is None else Decimal(v) for v in GRADES.get((ci, title), (None, None, None))
         )
-        db.add(
-            Assignment(
-                course_id=courses[ci].id,
-                title=title,
-                kind=kind,
-                due_at=_at(today, offset, hhmm, zone),
-                priority=priority,
-                status=status,
-                weight=weight,
-                score=score,
-                out_of=out_of,
-            )
+        assignment = Assignment(
+            course_id=courses[ci].id,
+            title=title,
+            kind=kind,
+            due_at=_at(today, offset, hhmm, zone),
+            priority=priority,
+            weight=weight,
         )
+        db.add(assignment)
+        db.flush()
+        if status != "todo" or score is not None:
+            db.add(
+                AssignmentProgress(
+                    assignment_id=assignment.id,
+                    user_id=user.id,
+                    status=status,
+                    score=score,
+                    out_of=out_of,
+                )
+            )
 
     created = 0
     for ci, days_ago, hhmm, minutes in SESSIONS:
@@ -140,7 +151,9 @@ def reset_demo_data(db: Session, user: User, zone: ZoneInfo, password: str | Non
         end = start + dt.timedelta(minutes=minutes)
         if end > now:  # the API never accepts future sessions; neither does the demo
             continue
-        db.add(StudySession(course_id=courses[ci].id, started_at=start, ended_at=end))
+        db.add(
+            StudySession(user_id=user.id, course_id=courses[ci].id, started_at=start, ended_at=end)
+        )
         created += 1
     return created
 

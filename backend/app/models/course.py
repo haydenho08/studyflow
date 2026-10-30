@@ -21,6 +21,9 @@ class Course(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(100))
     code: Mapped[str] = mapped_column(String(20))
     color: Mapped[str] = mapped_column(String(7))  # "#RRGGBB"
+    # Secret for the invite link (/join/<token>); None while sharing is off. Like the calendar
+    # feed, the URL itself is the credential, and replacing it stops the old link at once.
+    invite_token: Mapped[str | None] = mapped_column(String(64), unique=True)
 
     user: Mapped["User"] = relationship(back_populates="courses")
     assignments: Mapped[list["Assignment"]] = relationship(

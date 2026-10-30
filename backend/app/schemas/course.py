@@ -1,6 +1,6 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.schemas.common import UtcDatetime, reject_null
 
@@ -32,12 +32,41 @@ class CourseUpdate(BaseModel):
     _no_nulls = field_validator("name", "code", "color")(reject_null)
 
 
-class CourseRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+Role = Literal["owner", "member"]
 
+
+class CourseRead(BaseModel):
     id: int
     name: str
     code: str
     color: str
+    role: Role = Field(description="Yours (owner), or joined through an invite link (member)")
+    owner_email: str
+    member_count: int = Field(description="People who joined, not counting the owner")
     created_at: UtcDatetime
     updated_at: UtcDatetime
+
+
+class CourseInvite(BaseModel):
+    path: str | None = Field(
+        description="The invite link's path on this site (/join/<secret>), or null while off."
+    )
+
+
+class InvitePreview(BaseModel):
+    """What someone holding the link sees before joining."""
+
+    course_id: int
+    code: str
+    name: str
+    color: str
+    owner_email: str
+    member_count: int
+    role: Role | None = Field(description="Your role if you're already in it, else null")
+
+
+class CourseMemberRead(BaseModel):
+    user_id: int
+    email: str
+    role: Role
+    joined_at: UtcDatetime | None = Field(description="Null for the owner")

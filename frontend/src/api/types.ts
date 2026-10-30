@@ -10,6 +10,9 @@ export type Token = Schemas["Token"];
 export type Course = Schemas["CourseRead"];
 export type CourseCreate = Schemas["CourseCreate"];
 export type CourseUpdate = Schemas["CourseUpdate"];
+export type CourseInvite = Schemas["CourseInvite"];
+export type InvitePreview = Schemas["InvitePreview"];
+export type CourseMember = Schemas["CourseMemberRead"];
 
 export type Assignment = Schemas["AssignmentRead"];
 export type AssignmentCreate = Schemas["AssignmentCreate"];

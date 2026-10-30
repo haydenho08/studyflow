@@ -18,13 +18,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, TimestampMixin
-from app.models.enums import AssignmentKind, Priority, Status
+from app.models.enums import AssignmentKind, Priority
 
 if TYPE_CHECKING:
+    from app.models.assignment_progress import AssignmentProgress
     from app.models.course import Course
 
 
-def _str_enum(enum_cls: type[StrEnum], name: str) -> Enum:
+def str_enum(enum_cls: type[StrEnum], name: str) -> Enum:
     """Store an enum as VARCHAR + CHECK constraint rather than a native Postgres ENUM type.
 
     Native enums need ALTER TYPE migrations to add values; a CHECK constraint is easier to
@@ -46,35 +47,30 @@ class Assignment(TimestampMixin, Base):
     # also serves lookups by course_id alone.
     __table_args__ = (
         Index("ix_assignments_course_id_due_at", "course_id", "due_at"),
-        # Grades: the database refuses nonsense whatever code writes it.
+        # The database refuses nonsense whatever code writes it.
         CheckConstraint("weight > 0 AND weight <= 100", name="weight_is_a_percentage"),
-        CheckConstraint("score >= 0", name="score_not_negative"),
-        CheckConstraint("out_of > 0", name="out_of_positive"),
-        CheckConstraint("(score IS NULL) = (out_of IS NULL)", name="score_has_out_of"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # Ownership comes from the course: there is deliberately no user_id column here.
+    # Access comes from the course (its owner and members): there is no user_id column here.
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(Text)
     kind: Mapped[AssignmentKind] = mapped_column(
-        _str_enum(AssignmentKind, "assignment_kind"), server_default=AssignmentKind.ASSIGNMENT.value
+        str_enum(AssignmentKind, "assignment_kind"), server_default=AssignmentKind.ASSIGNMENT.value
     )
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     priority: Mapped[Priority] = mapped_column(
-        _str_enum(Priority, "priority"), server_default=Priority.MEDIUM.value
-    )
-    status: Mapped[Status] = mapped_column(
-        _str_enum(Status, "status"), server_default=Status.TODO.value
+        str_enum(Priority, "priority"), server_default=Priority.MEDIUM.value
     )
     # Deadlines created together as a repeating series share this id ("Lab {n}" every Friday),
     # so they can be edited or deleted "from this one onwards". None for one-off deadlines.
     series_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
-    # Grade tracking (all optional): how much of the course this is worth, and the mark you got.
-    # Numeric, not float: exact decimals, so 7.5% is stored as 7.5, not 7.4999999.
+    # How much of the course this is worth: the same for everyone taking it. (Each person's own
+    # status and mark are in assignment_progress.) Numeric, not float: 7.5% is exactly 7.5.
     weight: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))  # percent of the course
-    score: Mapped[Decimal | None] = mapped_column(Numeric(7, 2))
-    out_of: Mapped[Decimal | None] = mapped_column(Numeric(7, 2))
 
     course: Mapped["Course"] = relationship(back_populates="assignments")
+    progress: Mapped[list["AssignmentProgress"]] = relationship(
+        back_populates="assignment", cascade="all, delete-orphan", passive_deletes=True
+    )
