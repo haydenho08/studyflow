@@ -15,6 +15,10 @@ A full-stack productivity app for students: track courses and deadlines, focus w
 |---|---|
 | ![Stacked bar chart of study time per day by course, with totals](docs/screenshots/stats.png) | ![Focus timer counting down for a course, with the same countdown in the top bar](docs/screenshots/study.png) |
 
+| Grade tracker | Sharing a course with classmates |
+|---|---|
+| ![A course's grade so far, the range of possible final grades, and the mark needed on the rest for each letter grade](docs/screenshots/grades.png) | ![Share dialog with an invite link and the classmates who joined](docs/screenshots/sharing.png) |
+
 | Assignments with filters | Dark mode | Phone |
 |---|---|---|
 | ![Assignment list with course, status and date filters](docs/screenshots/assignments.png) | ![Calendar in dark mode](docs/screenshots/calendar-dark.png) | ![Calendar as a one-day-per-row agenda on a phone](docs/screenshots/calendar-mobile.png) |

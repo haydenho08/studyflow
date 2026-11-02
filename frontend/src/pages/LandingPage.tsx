@@ -3,11 +3,15 @@ import {
   CalendarDays,
   Check,
   Code,
+  GraduationCap,
   ListChecks,
   Moon,
+  Repeat,
+  Rss,
   ShieldCheck,
   Smartphone,
   Timer,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { useRef, type CSSProperties } from "react";
@@ -16,8 +20,10 @@ import { Link } from "react-router";
 import assignmentsShot from "../assets/landing/assignments.webp";
 import calendarMobileShot from "../assets/landing/calendar-mobile.webp";
 import calendarShot from "../assets/landing/calendar.webp";
+import gradesShot from "../assets/landing/grades.webp";
 import heroDarkShot from "../assets/landing/hero-calendar-dark.webp";
 import heroShot from "../assets/landing/hero-calendar.webp";
+import sharingShot from "../assets/landing/sharing.webp";
 import statsShot from "../assets/landing/stats.webp";
 import studyShot from "../assets/landing/study.webp";
 import { DemoButton } from "../components/DemoButton";
@@ -89,9 +95,45 @@ const FEATURES: Feature[] = [
     shot: statsShot,
     alt: "Weekly stats: a stacked bar chart of study hours per day, by course",
   },
+  {
+    icon: GraduationCap,
+    eyebrow: "Grades",
+    title: "Know what you need on the final",
+    body: "Give deadlines a weight and enter your marks. StudyFlow works out where each course stands.",
+    points: [
+      "Your grade so far, and the best and worst it can still be",
+      "The mark you need on the rest for every letter grade",
+      "Exact maths: \"you need 72.34%\" really is enough",
+    ],
+    shot: gradesShot,
+    alt: "The grades page: grade so far, possible range, and the mark needed for each letter",
+  },
+  {
+    icon: Users,
+    eyebrow: "Study groups",
+    title: "Share a course with your classmates",
+    body: "Send an invite link and everyone gets the same deadlines. Whoever hears about a change updates it for all.",
+    points: [
+      "Everyone ticks off and marks their own work, privately",
+      "Replace or turn off the link at any time",
+      "The owner decides who stays in",
+    ],
+    shot: sharingShot,
+    alt: "Sharing a course: an invite link and the classmates who joined",
+  },
 ];
 
 const EXTRAS: { icon: LucideIcon; title: string; body: string }[] = [
+  {
+    icon: Repeat,
+    title: "Repeating deadlines",
+    body: "A lab every Friday for the term, entered once and numbered for you.",
+  },
+  {
+    icon: Rss,
+    title: "In your calendar app",
+    body: "Subscribe from Google, Apple or Outlook Calendar and your deadlines stay in sync.",
+  },
   {
     icon: Smartphone,
     title: "Works on your phone",
@@ -241,7 +283,7 @@ export function LandingPage() {
               <p className="landing-eyebrow">Features</p>
               <h2 id="features-title">Everything a term throws at you</h2>
               <p className="muted">
-                Four views that share the same courses, so nothing has to be typed twice.
+                Every view shares the same courses, so nothing has to be typed twice.
               </p>
             </div>
 
